@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpeciCare - Book Medical Tests</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-stethoscope"></i>
+                <span>SpeciCare</span>
+            </div>
+            <div class="nav-menu">
+                <a href="#home" class="nav-link">Home</a>
+                <a href="#search" class="nav-link">Find Tests</a>
+                <a href="#dashboard" class="nav-link">Dashboard</a>
+                <a href="#login" class="nav-link login-btn">Login</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main>
+        <!-- Home Section -->
+        <section id="home" class="section active">
+            <div class="hero">
+                <div class="hero-content">
+                    <h1>Find & Book Medical Tests</h1>
+                    <p>Connect with specialized diagnostic services across Rwanda. Save time, save money.</p>
+                    <button class="cta-button" onclick="showSection('search')">
+                        Find Tests Now <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+                <div class="hero-image">
+                    <i class="fas fa-heartbeat"></i>
+                </div>
+            </div>
+
+            <div class="features">
+                <div class="feature-card">
+                    <i class="fas fa-search"></i>
+                    <h3>Find Tests</h3>
+                    <p>Search for specialized medical tests near you</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-calendar-check"></i>
+                    <h3>Book Online</h3>
+                    <p>Schedule appointments instantly</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-file-medical"></i>
+                    <h3>Digital Results</h3>
+                    <p>Receive results online, no extra trips</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Search Section -->
+        <section id="search" class="section">
+            <div class="search-header">
+                <h2>Find Medical Tests</h2>
+                <p>Search and book specialized tests across Rwanda</p>
+            </div>
+
+            <div class="search-container">
+                <div class="search-box">
+                    <input type="text" id="testSearch" placeholder="Search for tests (e.g., MRI, Blood Test, X-Ray)">
+                    <button onclick="searchTests()"><i class="fas fa-search"></i></button>
+                </div>
+
+                <div class="filters">
+                    <select id="locationFilter">
+                        <option value="">All Locations</option>
+                        <option value="kigali">Kigali</option>
+                        <option value="bugesera">Bugesera</option>
+                        <option value="muhanga">Muhanga</option>
+                    </select>
+                    <select id="priceFilter">
+                        <option value="">Any Price</option>
+                        <option value="0-10000">Under 10,000 RWF</option>
+                        <option value="10000-50000">10,000 - 50,000 RWF</option>
+                        <option value="50000+">Over 50,000 RWF</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="results-container">
+                <div class="test-card">
+                    <div class="test-info">
+                        <h3>MRI Scan</h3>
+                        <p class="hospital">Kigali Central Hospital</p>
+                        <p class="location"><i class="fas fa-map-marker-alt"></i> Kigali</p>
+                        <p class="price">85,000 RWF</p>
+                    </div>
+                    <button class="book-btn" onclick="bookTest('MRI Scan', 'Kigali Central Hospital')">
+                        Book Now
+                    </button>
+                </div>
+
+                <div class="test-card">
+                    <div class="test-info">
+                        <h3>CT Scan</h3>
+                        <p class="hospital">King Faisal Hospital</p>
+                        <p class="location"><i class="fas fa-map-marker-alt"></i> Kigali</p>
+                        <p class="price">75,000 RWF</p>
+                    </div>
+                    <button class="book-btn" onclick="bookTest('CT Scan', 'King Faisal Hospital')">
+                        Book Now
+                    </button>
+                </div>
+
+                <div class="test-card">
+                    <div class="test-info">
+                        <h3>Blood Test (Full Panel)</h3>
+                        <p class="hospital">Bugesera District Hospital</p>
+                        <p class="location"><i class="fas fa-map-marker-alt"></i> Bugesera</p>
+                        <p class="price">15,000 RWF</p>
+                    </div>
+                    <button class="book-btn" onclick="bookTest('Blood Test', 'Bugesera District Hospital')">
+                        Book Now
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Booking Form -->
+        <div id="bookingModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeBooking()">&times;</span>
+                <h2>Book Your Test</h2>
+                <form id="bookingForm">
+                    <div class="form-group">
+                        <label>Test Type</label>
+                        <input type="text" id="bookingTest" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Hospital</label>
+                        <input type="text" id="bookingHospital" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" id="patientName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Phone Number</label>
+                        <input type="tel" id="patientPhone" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Insurance Number (CBHI)</label>
+                        <input type="text" id="insuranceNumber">
+                    </div>
+                    <div class="form-group">
+                        <label>Preferred Date</label>
+                        <input type="date" id="appointmentDate" required>
+                    </div>
+                    <button type="submit" class="submit-btn">Confirm Booking</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Dashboard Section -->
+        <section id="dashboard" class="section">
+            <div class="dashboard-header">
+                <h2>My Dashboard</h2>
+            </div>
+
+            <div class="dashboard-cards">
+                <div class="dashboard-card">
+                    <h3>Upcoming Appointments</h3>
+                    <div class="appointment-list" id="appointmentList">
+                        <!-- Appointments will be loaded here -->
+                    </div>
+                </div>
+
+                <div class="dashboard-card">
+                    <h3>Test Results</h3>
+                    <div class="results-list" id="resultsList">
+                        <!-- Results will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
