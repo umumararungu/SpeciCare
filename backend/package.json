@@ -8,17 +8,17 @@
     "dev": "nodemon server.js"
   },
   "dependencies": {
-    "africastalking": "^0.6.0",
+    "africastalking": "^0.6.7",
     "bcryptjs": "^2.4.3",
-    "body-parser": "^1.20.2",
+    "body-parser": "^1.20.3",
     "cors": "^2.8.5",
-    "dotenv": "^16.3.1",
+    "dotenv": "^16.6.1",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^7.5.0"
+    "mongoose": "^7.8.7"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "nodemon": "^3.1.10"
   },
   "keywords": [
     "medical",
@@ -30,6 +30,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/umumararungu/SpeciCare"
-  }
+    "url": "git+https://github.com/umumararungu/SpeciCare.git"
+  },
+  "bugs": {
+    "url": "https://github.com/umumararungu/SpeciCare/issues"
+  },
+  "homepage": "https://github.com/umumararungu/SpeciCare#readme"
 }
