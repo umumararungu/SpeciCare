@@ -1,149 +1,121 @@
 const express = require('express');
+const db = require('../config/database');
 const router = express.Router();
 
-// Sample medical tests data
-const medicalTests = [
-    {
-        id: 1,
-        name: 'MRI Scan',
-        category: 'Radiology',
-        hospital: 'Kigali Central Hospital',
-        location: 'Kigali',
-        price: 85000,
-        duration: '45 minutes',
-        description: 'Magnetic Resonance Imaging for detailed internal body scans',
-        available: true,
-        insuranceCovered: true
-    },
-    {
-        id: 2,
-        name: 'CT Scan',
-        category: 'Radiology',
-        hospital: 'King Faisal Hospital',
-        location: 'Kigali',
-        price: 75000,
-        duration: '30 minutes',
-        description: 'Computed Tomography scan for cross-sectional body images',
-        available: true,
-        insuranceCovered: true
-    },
-    {
-        id: 3,
-        name: 'Blood Test (Full Panel)',
-        category: 'Laboratory',
-        hospital: 'Bugesera District Hospital',
-        location: 'Bugesera',
-        price: 15000,
-        duration: '15 minutes',
-        description: 'Complete blood count and comprehensive metabolic panel',
-        available: true,
-        insuranceCovered: true
-    },
-    {
-        id: 4,
-        name: 'X-Ray Chest',
-        category: 'Radiology',
-        hospital: 'Muhanga District Hospital',
-        location: 'Muhanga',
-        price: 20000,
-        duration: '20 minutes',
-        description: 'Chest X-ray for lung and heart examination',
-        available: true,
-        insuranceCovered: true
-    },
-    {
-        id: 5,
-        name: 'Ultrasound Abdomen',
-        category: 'Radiology',
-        hospital: 'Kigali Central Hospital',
-        location: 'Kigali',
-        price: 35000,
-        duration: '30 minutes',
-        description: 'Abdominal ultrasound for organ examination',
-        available: true,
-        insuranceCovered: true
-    }
-];
-
-// Get all tests
+// Get all tests with filtering
 router.get('/', (req, res) => {
     const { search, location, category, minPrice, maxPrice } = req.query;
 
-    let filteredTests = medicalTests;
+    let sql = `
+        SELECT mt.*, h.name as hospitalName, h.district as location 
+        FROM medical_tests mt 
+        LEFT JOIN hospitals h ON mt.hospitalId = h.id 
+        WHERE mt.isAvailable = 1
+    `;
+    let params = [];
 
-    // Apply filters
     if (search) {
-        filteredTests = filteredTests.filter(test =>
-            test.name.toLowerCase().includes(search.toLowerCase()) ||
-            test.description.toLowerCase().includes(search.toLowerCase())
-        );
+        sql += ' AND (mt.name LIKE ? OR mt.description LIKE ?)';
+        params.push(`%${search}%`, `%${search}%`);
     }
 
     if (location) {
-        filteredTests = filteredTests.filter(test =>
-            test.location.toLowerCase().includes(location.toLowerCase())
-        );
+        sql += ' AND h.district LIKE ?';
+        params.push(`%${location}%`);
     }
 
     if (category) {
-        filteredTests = filteredTests.filter(test =>
-            test.category.toLowerCase() === category.toLowerCase()
-        );
+        sql += ' AND mt.category = ?';
+        params.push(category);
     }
 
     if (minPrice) {
-        filteredTests = filteredTests.filter(test => test.price >= parseInt(minPrice));
+        sql += ' AND mt.price >= ?';
+        params.push(parseInt(minPrice));
     }
 
     if (maxPrice) {
-        filteredTests = filteredTests.filter(test => test.price <= parseInt(maxPrice));
+        sql += ' AND mt.price <= ?';
+        params.push(parseInt(maxPrice));
     }
 
-    res.json({
-        success: true,
-        count: filteredTests.length,
-        tests: filteredTests
+    sql += ' ORDER BY mt.name';
+
+    db.all(sql, params, (err, rows) => {
+        if (err) {
+            console.error('Database error:', err);
+            return res.status(500).json({
+                success: false,
+                message: 'Failed to fetch tests'
+            });
+        }
+
+        // If no specific hospital join, get basic test info
+        if (rows.length === 0 || !rows[0].hospitalName) {
+            db.all('SELECT * FROM medical_tests WHERE isAvailable = 1 ORDER BY name', (err, basicRows) => {
+                if (err) {
+                    return res.status(500).json({
+                        success: false,
+                        message: 'Failed to fetch tests'
+                    });
+                }
+                res.json({
+                    success: true,
+                    count: basicRows.length,
+                    tests: basicRows
+                });
+            });
+        } else {
+            res.json({
+                success: true,
+                count: rows.length,
+                tests: rows
+            });
+        }
     });
 });
 
 // Get test by ID
 router.get('/:id', (req, res) => {
     const testId = parseInt(req.params.id);
-    const test = medicalTests.find(t => t.id === testId);
+    
+    db.get('SELECT * FROM medical_tests WHERE id = ?', [testId], (err, test) => {
+        if (err) {
+            return res.status(500).json({
+                success: false,
+                message: 'Database error'
+            });
+        }
 
-    if (!test) {
-        return res.status(404).json({
-            success: false,
-            message: 'Test not found'
+        if (!test) {
+            return res.status(404).json({
+                success: false,
+                message: 'Test not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            test
         });
-    }
-
-    res.json({
-        success: true,
-        test
-    });
-});
-
-// Get tests by hospital
-router.get('/hospital/:hospital', (req, res) => {
-    const hospital = req.params.hospital;
-    const hospitalTests = medicalTests.filter(test =>
-        test.hospital.toLowerCase().includes(hospital.toLowerCase())
-    );
-
-    res.json({
-        success: true,
-        count: hospitalTests.length,
-        tests: hospitalTests
     });
 });
 
 // Get available categories
 router.get('/categories/all', (req, res) => {
-    const categories = [...new Set(medicalTests.map(test => test.category))];
-    res.json({
-        success: true,
-        categories
+    db.all('SELECT DISTINCT category FROM medical_tests WHERE isAvailable = 1 ORDER BY category', (err, rows) => {
+        if (err) {
+            return res.status(500).json({
+                success: false,
+                message: 'Database error'
+            });
+        }
+
+        const categories = rows.map(row => row.category);
+        res.json({
+            success: true,
+            categories
+        });
     });
 });
 
