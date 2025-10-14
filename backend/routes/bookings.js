@@ -1,9 +1,12 @@
 const express = require('express');
-const db = require('../config/database');
+const { query } = require('../config/database');
+const { authenticateToken } = require('../middleware/auth');
+const { validateBooking, handleValidationErrors } = require('../middleware/validation');
+
 const router = express.Router();
 
 // Create a new booking
-router.post('/', (req, res) => {
+router.post('/', authenticateToken, validateBooking, handleValidationErrors, async (req, res) => {
     try {
         const {
             patientName,
@@ -11,129 +14,128 @@ router.post('/', (req, res) => {
             patientEmail,
             testId,
             testName,
-            hospital,
+            hospitalId,
             appointmentDate,
+            timeSlot,
             insuranceNumber,
             notes
         } = req.body;
 
-        // Validate required fields
-        if (!patientName || !patientPhone || !testName || !hospital || !appointmentDate) {
-            return res.status(400).json({
+        // Generate unique reference
+        const reference = `SC${Date.now()}${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
+
+        // Get test price
+        const testResult = await query(
+            'SELECT price, is_insurance_covered, insurance_co_pay FROM medical_tests WHERE id = $1',
+            [testId]
+        );
+
+        if (testResult.rows.length === 0) {
+            return res.status(404).json({
                 success: false,
-                message: 'Missing required fields'
+                message: 'Medical test not found'
             });
         }
 
-        // Generate reference
-        const reference = `SC${Date.now()}${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
-
-        // Get test price (simplified - in real app you'd get this from database)
-        const testPrice = 15000; // Default price
+        const test = testResult.rows[0];
+        const totalAmount = test.price;
+        const insuranceCovered = test.is_insurance_covered ? test.insurance_co_pay : 0;
+        const patientShare = totalAmount - insuranceCovered;
 
         // Create booking
-        const sql = `
-            INSERT INTO appointments 
-            (reference, patientName, patientPhone, patientEmail, testId, testName, hospital, 
-             appointmentDate, insuranceNumber, totalAmount, patientShare, clinicalNotes)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `;
+        const result = await query(
+            `INSERT INTO appointments 
+            (reference, patient_id, test_id, hospital_id, appointment_date, time_slot,
+             total_amount, insurance_covered, patient_share, patient_name, patient_phone,
+             patient_email, patient_insurance_number, clinical_notes)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+            RETURNING id, reference, status, appointment_date, created_at`,
+            [
+                reference,
+                req.user.userId,
+                testId,
+                hospitalId,
+                appointmentDate,
+                timeSlot,
+                totalAmount,
+                insuranceCovered,
+                patientShare,
+                patientName,
+                patientPhone,
+                patientEmail,
+                insuranceNumber,
+                notes
+            ]
+        );
 
-        db.run(sql, [
-            reference,
-            patientName,
-            patientPhone,
-            patientEmail,
-            testId,
-            testName,
-            hospital,
-            appointmentDate,
-            insuranceNumber,
-            testPrice,
-            testPrice, // For simplicity, patient pays full amount
-            notes
-        ], function(err) {
-            if (err) {
-                console.error('Booking creation error:', err);
-                return res.status(500).json({
-                    success: false,
-                    message: 'Failed to create booking'
-                });
+        const booking = result.rows[0];
+
+        res.status(201).json({
+            success: true,
+            message: 'Booking created successfully',
+            booking: {
+                id: booking.id,
+                reference: booking.reference,
+                status: booking.status,
+                appointmentDate: booking.appointment_date,
+                createdAt: booking.created_at
             }
-
-            res.status(201).json({
-                success: true,
-                message: 'Booking created successfully',
-                booking: {
-                    id: this.lastID,
-                    reference: reference,
-                    patientName: patientName,
-                    testName: testName,
-                    hospital: hospital,
-                    appointmentDate: appointmentDate,
-                    status: 'confirmed'
-                }
-            });
         });
 
     } catch (error) {
-        console.error('Booking creation error:', error);
+        console.error('Create booking error:', error);
         res.status(500).json({
             success: false,
-            message: 'Internal server error'
+            message: 'Failed to create booking'
         });
     }
 });
 
-// Get all bookings
-router.get('/', (req, res) => {
-    const { phone, status } = req.query;
-
-    let sql = 'SELECT * FROM appointments WHERE 1=1';
-    let params = [];
-
-    if (phone) {
-        sql += ' AND patientPhone LIKE ?';
-        params.push(`%${phone}%`);
-    }
-
-    if (status) {
-        sql += ' AND status = ?';
-        params.push(status);
-    }
-
-    sql += ' ORDER BY appointmentDate DESC';
-
-    db.all(sql, params, (err, rows) => {
-        if (err) {
-            console.error('Database error:', err);
-            return res.status(500).json({
-                success: false,
-                message: 'Failed to fetch bookings'
-            });
-        }
+// Get user's bookings
+router.get('/my-bookings', authenticateToken, async (req, res) => {
+    try {
+        const result = await query(
+            `SELECT a.*, mt.name as test_name, h.name as hospital_name
+             FROM appointments a
+             JOIN medical_tests mt ON a.test_id = mt.id
+             JOIN hospitals h ON a.hospital_id = h.id
+             WHERE a.patient_id = $1
+             ORDER BY a.appointment_date DESC, a.created_at DESC`,
+            [req.user.userId]
+        );
 
         res.json({
             success: true,
-            count: rows.length,
-            bookings: rows
+            count: result.rows.length,
+            bookings: result.rows
         });
-    });
+
+    } catch (error) {
+        console.error('Get bookings error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch bookings'
+        });
+    }
 });
 
 // Get booking by ID
-router.get('/:id', (req, res) => {
-    const bookingId = parseInt(req.params.id);
-    
-    db.get('SELECT * FROM appointments WHERE id = ?', [bookingId], (err, booking) => {
-        if (err) {
-            return res.status(500).json({
-                success: false,
-                message: 'Database error'
-            });
-        }
+router.get('/:id', authenticateToken, async (req, res) => {
+    try {
+        const bookingId = parseInt(req.params.id);
 
-        if (!booking) {
+        const result = await query(
+            `SELECT a.*, mt.name as test_name, mt.description as test_description,
+                    h.name as hospital_name, h.phone as hospital_phone, 
+                    h.district as hospital_district, h.sector as hospital_sector
+             FROM appointments a
+             JOIN medical_tests mt ON a.test_id = mt.id
+             JOIN hospitals h ON a.hospital_id = h.id
+             WHERE a.id = $1 AND (a.patient_id = $2 OR $3 = 'admin' OR $3 = 'hospital_staff')`,
+            [bookingId, req.user.userId, req.user.role]
+        );
+
+        if (result.rows.length === 0) {
             return res.status(404).json({
                 success: false,
                 message: 'Booking not found'
@@ -142,9 +144,52 @@ router.get('/:id', (req, res) => {
 
         res.json({
             success: true,
-            booking
+            booking: result.rows[0]
         });
-    });
+
+    } catch (error) {
+        console.error('Get booking error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch booking'
+        });
+    }
+});
+
+// Cancel booking
+router.patch('/:id/cancel', authenticateToken, async (req, res) => {
+    try {
+        const bookingId = parseInt(req.params.id);
+        const { reason } = req.body;
+
+        const result = await query(
+            `UPDATE appointments 
+             SET status = 'cancelled', cancellation_reason = $1, cancelled_by = $2, cancelled_at = CURRENT_TIMESTAMP
+             WHERE id = $3 AND patient_id = $4 AND status IN ('pending', 'confirmed')
+             RETURNING id, reference, status`,
+            [reason, 'patient', bookingId, req.user.userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Booking not found or cannot be cancelled'
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Booking cancelled successfully',
+            booking: result.rows[0]
+        });
+
+    } catch (error) {
+        console.error('Cancel booking error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to cancel booking'
+        });
+    }
 });
 
 module.exports = router;
