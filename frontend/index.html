@@ -337,6 +337,243 @@
         <div id="loadingSpinner" class="loading-spinner">
             <div class="spinner"></div>
         </div>
+
+<!-- Admin Dashboard Section -->
+<section id="admin" class="section">
+    <div class="dashboard-header">
+        <h2>Admin Dashboard</h2>
+        <p>Manage platform operations and view analytics</p>
+    </div>
+
+    <div class="dashboard-actions">
+        <button class="dashboard-btn active" onclick="showAdminTab('overview')">
+            <i class="fas fa-chart-bar"></i> Overview
+        </button>
+        <button class="dashboard-btn" onclick="showAdminTab('users')">
+            <i class="fas fa-users"></i> Users
+        </button>
+        <button class="dashboard-btn" onclick="showAdminTab('bookings')">
+            <i class="fas fa-calendar-alt"></i> Bookings
+        </button>
+        <button class="dashboard-btn" onclick="showAdminTab('tests')">
+            <i class="fas fa-flask"></i> Tests
+        </button>
+    </div>
+
+    <div class="dashboard-content">
+        <!-- Overview Tab -->
+        <div id="overviewTab" class="dashboard-tab active">
+            <div class="admin-stats">
+                <div class="admin-stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalUsers">0</h3>
+                        <p>Total Users</p>
+                    </div>
+                </div>
+                <div class="admin-stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalBookings">0</h3>
+                        <p>Total Bookings</p>
+                    </div>
+                </div>
+                <div class="admin-stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-hospital"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalTests">0</h3>
+                        <p>Available Tests</p>
+                    </div>
+                </div>
+                <div class="admin-stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-money-bill-wave"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalRevenue">0 RWF</h3>
+                        <p>Total Revenue</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="recent-activities">
+                <h3>Recent Activities</h3>
+                <div class="activities-list" id="activitiesList">
+                    <!-- Activities will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Users Tab -->
+        <div id="usersTab" class="dashboard-tab">
+            <div class="tab-header">
+                <h3>User Management</h3>
+                <button class="secondary-btn" onclick="exportUsers()">
+                    <i class="fas fa-download"></i> Export Users
+                </button>
+            </div>
+            <div class="users-list" id="usersList">
+                <!-- Users will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Bookings Tab -->
+        <div id="bookingsTab" class="dashboard-tab">
+            <div class="tab-header">
+                <h3>Booking Management</h3>
+                <div class="filter-controls">
+                    <select id="bookingStatusFilter" onchange="filterBookings()">
+                        <option value="all">All Status</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+            </div>
+            <div class="bookings-list" id="bookingsList">
+                <!-- Bookings will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Tests Tab -->
+        <div id="testsTab" class="dashboard-tab">
+            <div class="tab-header">
+                <h3>Test Management</h3>
+                <button class="cta-button" onclick="showAddTestModal()">
+                    <i class="fas fa-plus"></i> Add New Test
+                </button>
+            </div>
+            <div class="tests-list" id="testsList">
+                <!-- Tests will be loaded here -->
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Add Test Modal -->
+<div id="addTestModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close" onclick="closeAddTestModal()">&times;</span>
+        <h2>Add New Medical Test</h2>
+        <form id="addTestForm">
+            <div class="form-group">
+                <label for="testName">Test Name *</label>
+                <input type="text" id="testName" required placeholder="e.g., MRI Scan, Blood Test">
+            </div>
+            <div class="form-group">
+                <label for="testCategory">Category *</label>
+                <select id="testCategory" required>
+                    <option value="">Select Category</option>
+                    <option value="radiology">Radiology</option>
+                    <option value="laboratory">Laboratory</option>
+                    <option value="cardiology">Cardiology</option>
+                    <option value="neurology">Neurology</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="testHospital">Hospital *</label>
+                <input type="text" id="testHospital" required placeholder="e.g., Kigali Central Hospital">
+            </div>
+            <div class="form-group">
+                <label for="testLocation">Location *</label>
+                <input type="text" id="testLocation" required placeholder="e.g., Kigali, Bugesera">
+            </div>
+            <div class="form-group">
+                <label for="testPrice">Price (RWF) *</label>
+                <input type="number" id="testPrice" required placeholder="e.g., 50000" min="0">
+            </div>
+            <div class="form-group">
+                <label for="testDuration">Duration *</label>
+                <input type="text" id="testDuration" required placeholder="e.g., 30 minutes, 1 hour">
+            </div>
+            <div class="form-group">
+                <label for="testDescription">Description *</label>
+                <textarea id="testDescription" required placeholder="Describe the test procedure and purpose" rows="3"></textarea>
+            </div>
+            <div class="form-group" style="display: flex; gap: 20px; align-items: center;">
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="testAvailable" checked> 
+                    Available for booking
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="testInsuranceCovered" checked> 
+                    Insurance Covered
+                </label>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="submit-btn">
+                    <i class="fas fa-plus"></i> Add Test
+                </button>
+                <button type="button" class="secondary-btn" onclick="closeAddTestModal()">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit User Modal - SIMPLIFIED VERSION -->
+<div id="editUserModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close" onclick="closeEditUserModal()">&times;</span>
+        <h2>Edit User Information</h2>
+        <form id="editUserForm">
+            <input type="hidden" id="editUserId">
+            
+            <div class="form-group">
+                <label for="editUserName">Full Name *</label>
+                <input type="text" id="editUserName" required placeholder="Enter full name">
+            </div>
+            
+            <div class="form-group">
+                <label for="editUserEmail">Email Address *</label>
+                <input type="email" id="editUserEmail" required placeholder="Enter email address">
+            </div>
+            
+            <div class="form-group">
+                <label for="editUserPhone">Phone Number *</label>
+                <input type="tel" id="editUserPhone" required placeholder="Enter phone number">
+            </div>
+            
+            <div class="form-group">
+                <label for="editUserInsurance">Insurance Number</label>
+                <input type="text" id="editUserInsurance" placeholder="Enter insurance number (optional)">
+            </div>
+            
+            <div class="form-group">
+                <label for="editUserStatus">Account Status *</label>
+                <select id="editUserStatus" required>
+                    <option value="active">Active</option>
+                    <option value="suspended">Suspended</option>
+                    <option value="inactive">Inactive</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="editUserPassword">New Password</label>
+                <input type="password" id="editUserPassword" placeholder="Leave blank to keep current password">
+                <small class="form-help">Only enter if you want to change the password</small>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="submit-btn">
+                    <i class="fas fa-save"></i> Update User
+                </button>
+                <button type="button" class="secondary-btn" onclick="closeEditUserModal()">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
     </main>
 
     <script src="script.js"></script>

@@ -40,9 +40,28 @@ const apiLimiter = rateLimit({
 // Input validation
 const validateUserRegistration = [
     body('name').trim().isLength({ min: 2, max: 100 }).escape(),
+
     body('email').isEmail().normalizeEmail(),
-    body('phone').isMobilePhone('any'),
+
+body('phone')
+    .isMobilePhone('any')
+    .withMessage('Please provide a valid mobile phone number')
+    .isLength({ min: 10, max: 10 })
+    .withMessage('Phone number must be exactly 10 digits')
+    .custom((value) => {
+        // Rwandan mobile operators: 
+        // 072 - MTN
+        // 073 - Airtel  
+        // 078 - MTN
+        // 079 - Airtel
+        if (!/^07[2389]\d{7}$/.test(value)) {
+            throw new Error('Phone number must be a valid Rwandan number (072, 073, 078, or 079)');
+        }
+        return true;
+    }),
+
     body('password').isLength({ min: 8 }).matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/),
+
     body('insuranceNumber').optional().trim().escape()
 ];
 

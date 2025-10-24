@@ -389,6 +389,13 @@ main {
     gap: 0.5rem;
 }
 
+.description {
+    color: var(--gray-medium);
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
 .price {
     color: var(--teal-dark);
     font-weight: bold;
@@ -403,14 +410,17 @@ main {
     padding: 0.75rem 1.5rem;
     border-radius: 5px;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: all 0.3s;
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    font-weight: 600;
 }
 
 .book-btn:hover {
     background: var(--teal-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(0, 128, 128, 0.3);
 }
 
 /* Dashboard */
@@ -480,7 +490,7 @@ main {
 
 .profile-item {
     display: flex;
-    justify-content: between;
+    justify-content: space-between;
     margin-bottom: 1rem;
     padding-bottom: 1rem;
     border-bottom: 1px solid var(--gray-border);
@@ -552,25 +562,40 @@ main {
     margin-bottom: 0.5rem;
     color: var(--black);
     font-weight: bold;
+    font-size: 0.9rem;
 }
 
-.form-group input, .form-group textarea {
+.form-group input, 
+.form-group textarea, 
+.form-group select {
     width: 100%;
-    padding: 0.75rem;
-    border: 1px solid var(--teal);
-    border-radius: 5px;
+    padding: 0.75rem 1rem;
+    border: 2px solid var(--gray-border);
+    border-radius: 8px;
     font-size: 1rem;
-    transition: border-color 0.3s;
+    transition: all 0.3s;
+    background-color: var(--white);
 }
 
-.form-group input:focus, .form-group textarea:focus {
+.form-group input:focus, 
+.form-group textarea:focus, 
+.form-group select:focus {
     outline: none;
-    border-color: var(--teal-dark);
+    border-color: var(--teal);
+    box-shadow: 0 0 0 3px rgba(0, 128, 128, 0.1);
 }
 
 .form-group textarea {
     resize: vertical;
     min-height: 80px;
+    font-family: inherit;
+}
+
+.form-group input:read-only {
+    background-color: var(--gray-light);
+    color: var(--gray-medium);
+    cursor: not-allowed;
+    border-color: var(--gray-border);
 }
 
 .submit-btn {
@@ -578,19 +603,23 @@ main {
     background: var(--teal);
     color: var(--white);
     border: none;
-    padding: 1rem;
-    border-radius: 5px;
+    padding: 1rem 2rem;
+    border-radius: 8px;
     font-size: 1.1rem;
     cursor: pointer;
-    transition: background-color 0.3s;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 0.5rem;
+    transition: all 0.3s;
+    font-weight: 600;
+    margin-top: 1rem;
 }
 
 .submit-btn:hover {
     background: var(--teal-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 128, 128, 0.3);
+}
+
+.submit-btn:active {
+    transform: translateY(0);
 }
 
 .secondary-btn {
@@ -601,6 +630,7 @@ main {
     border-radius: 5px;
     cursor: pointer;
     transition: all 0.3s;
+    font-weight: 600;
 }
 
 .secondary-btn:hover {
@@ -634,46 +664,139 @@ main {
     margin-top: 1rem;
 }
 
-/* Modal */
+/* Modal - UPDATED */
 .modal {
     display: none;
     position: fixed;
-    z-index: 2000;
+    z-index: 9999;
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0,0,0,0.5);
-    animation: fadeIn 0.3s;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(5px);
+    animation: fadeIn 0.3s ease;
 }
 
 .modal-content {
     background-color: var(--white);
     margin: 5% auto;
-    padding: 2rem;
-    border-radius: 10px;
+    padding: 2.5rem;
+    border-radius: 15px;
     width: 90%;
     max-width: 500px;
     position: relative;
-    animation: slideIn 0.3s;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    transform: scale(0.7);
+    opacity: 0;
+    transition: all 0.3s ease;
+    max-height: 85vh;
+    overflow-y: auto;
 }
 
-@keyframes slideIn {
-    from { transform: translateY(-50px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
+.modal-content.show {
+    transform: scale(1);
+    opacity: 1;
 }
 
 .close {
-    color: var(--black);
+    color: var(--gray-medium);
     float: right;
     font-size: 2rem;
     font-weight: bold;
     cursor: pointer;
     line-height: 1;
+    transition: color 0.3s ease;
+    position: absolute;
+    right: 1.5rem;
+    top: 1rem;
 }
 
 .close:hover {
     color: var(--teal);
+}
+
+/* Modal Form Styles */
+.modal-content h2 {
+    color: var(--black);
+    margin-bottom: 1.5rem;
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.modal .form-group {
+    margin-bottom: 1.5rem;
+}
+
+.modal .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--black);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.modal .form-group input,
+.modal .form-group textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid var(--gray-border);
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background-color: var(--white);
+}
+
+.modal .form-group input:focus,
+.modal .form-group textarea:focus {
+    outline: none;
+    border-color: var(--teal);
+    box-shadow: 0 0 0 3px rgba(0, 128, 128, 0.1);
+}
+
+.modal .form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+    font-family: inherit;
+}
+
+.modal .form-group input:read-only {
+    background-color: var(--gray-light);
+    color: var(--gray-medium);
+    cursor: not-allowed;
+}
+
+.modal .submit-btn {
+    width: 100%;
+    background: var(--teal);
+    color: var(--white);
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    margin-top: 1rem;
+}
+
+.modal .submit-btn:hover {
+    background: var(--teal-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 128, 128, 0.3);
+}
+
+.modal .submit-btn:active {
+    transform: translateY(0);
+}
+
+/* Loading State */
+.submit-btn:disabled {
+    background: var(--gray-medium);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
 }
 
 /* Loading Spinner */
@@ -688,6 +811,7 @@ main {
     z-index: 3000;
     justify-content: center;
     align-items: center;
+    backdrop-filter: blur(3px);
 }
 
 .spinner {
@@ -702,6 +826,113 @@ main {
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+
+/* Notification Styles */
+.notification {
+    position: fixed;
+    top: 100px;
+    right: 20px;
+    background: var(--success);
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 5px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 4000;
+    animation: slideInRight 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    max-width: 400px;
+}
+
+.notification.error {
+    background: var(--error);
+}
+
+.notification.warning {
+    background: var(--warning);
+    color: var(--black);
+}
+
+@keyframes slideInRight {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideOutRight {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
+}
+
+/* Status Styles */
+.status {
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.status.confirmed {
+    background: var(--success);
+    color: white;
+}
+
+.status.completed {
+    background: var(--teal);
+    color: white;
+}
+
+.status.cancelled {
+    background: var(--error);
+    color: white;
+}
+
+.status.pending {
+    background: var(--warning);
+    color: var(--black);
+}
+
+.reference {
+    font-family: monospace;
+    background: var(--white);
+    padding: 0.25rem 0.5rem;
+    border-radius: 3px;
+    font-size: 0.9rem;
+    border: 1px solid var(--gray-border);
+}
+
+.result-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+}
+
+/* No Results/Appointments Styles */
+.no-results, .no-appointments {
+    text-align: center;
+    padding: 3rem;
+    color: var(--gray-medium);
+}
+
+.no-results i, .no-appointments i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    color: var(--teal-light);
+}
+
+.appointment-header, .result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+/* Body scroll prevention when modal is open */
+body.modal-open {
+    overflow: hidden;
 }
 
 /* Responsive Design */
@@ -753,7 +984,12 @@ main {
     .modal-content {
         margin: 10% auto;
         width: 95%;
-        padding: 1rem;
+        padding: 1.5rem;
+    }
+
+    .close {
+        right: 1rem;
+        top: 0.5rem;
     }
 
     .nav-container {
@@ -777,4 +1013,323 @@ main {
     .login-card {
         padding: 2rem 1rem;
     }
+
+    .modal-content {
+        margin: 5% auto;
+        padding: 1rem;
+    }
+
+    .form-group input,
+    .form-group textarea {
+        padding: 0.6rem 0.8rem;
+    }
+
+    .hero-content h1 {
+        font-size: 1.8rem;
+    }
+
+    .hero-image {
+        font-size: 3rem;
+    }
+}
+
+/* Admin Dashboard Styles */
+.admin-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.admin-stat-card {
+    background: var(--white);
+    padding: 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    border-left: 4px solid var(--teal);
+}
+
+.stat-icon {
+    background: var(--teal-light);
+    padding: 1rem;
+    border-radius: 8px;
+    color: var(--teal);
+    font-size: 1.5rem;
+}
+
+.stat-info h3 {
+    font-size: 1.8rem;
+    color: var(--black);
+    margin-bottom: 0.25rem;
+}
+
+.stat-info p {
+    color: var(--gray-medium);
+    font-size: 0.9rem;
+}
+
+.recent-activities {
+    background: var(--white);
+    padding: 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.activities-list {
+    margin-top: 1rem;
+}
+
+.activity-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border-bottom: 1px solid var(--gray-border);
+}
+
+.activity-item:last-child {
+    border-bottom: none;
+}
+
+.activity-icon {
+    background: var(--gray-light);
+    padding: 0.5rem;
+    border-radius: 50%;
+    color: var(--teal);
+}
+
+.activity-content {
+    flex: 1;
+}
+
+.activity-content p {
+    margin: 0;
+    color: var(--black);
+}
+
+.activity-time {
+    color: var(--gray-medium);
+    font-size: 0.8rem;
+}
+
+.tab-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.users-list, .bookings-list, .tests-list {
+    display: grid;
+    gap: 1rem;
+}
+
+.user-item, .booking-item, .test-item {
+    background: var(--white);
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.user-info, .booking-info, .test-info {
+    flex: 1;
+}
+
+.user-actions, .booking-actions, .test-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.filter-controls {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+/* Admin-specific buttons */
+.danger-btn {
+    background: var(--error);
+    color: var(--white);
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.danger-btn:hover {
+    background: #c82333;
+}
+
+.warning-btn {
+    background: var(--warning);
+    color: var(--black);
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.warning-btn:hover {
+    background: #e0a800;
+}
+
+.no-activities, .no-users, .no-bookings, .no-tests {
+    text-align: center;
+    padding: 2rem;
+    color: var(--gray-medium);
+    font-style: italic;
+}
+
+/* Edit User Modal Styles */
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.form-actions .submit-btn {
+    flex: 1;
+}
+
+.form-actions .secondary-btn {
+    flex: 0.5;
+}
+
+.form-help {
+    color: var(--gray-medium);
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+    display: block;
+}
+
+.user-details-modal {
+    max-width: 600px;
+}
+
+.user-details-content {
+    background: var(--white);
+    padding: 2rem;
+    border-radius: 10px;
+}
+
+.user-detail-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--gray-border);
+}
+
+.user-detail-label {
+    font-weight: bold;
+    color: var(--black);
+    min-width: 150px;
+}
+
+.user-detail-value {
+    color: var(--gray-medium);
+    flex: 1;
+    text-align: right;
+}
+
+/* Enhanced user actions */
+.user-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.action-btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.edit-btn {
+    background: var(--teal);
+    color: var(--white);
+}
+
+.edit-btn:hover {
+    background: var(--teal-dark);
+}
+
+.view-btn {
+    background: var(--gray-light);
+    color: var(--black);
+}
+
+.view-btn:hover {
+    background: var(--gray-medium);
+    color: var(--white);
+}
+
+.suspend-btn {
+    background: var(--warning);
+    color: var(--black);
+}
+
+.suspend-btn:hover {
+    background: #e0a800;
+}
+
+.activate-btn {
+    background: var(--success);
+    color: var(--white);
+}
+
+.activate-btn:hover {
+    background: #218838;
+}
+
+/* Ensure section hiding works properly */
+.section {
+    display: none;
+}
+
+.section.active {
+    display: block;
+}
+
+/* Force hide dashboard and admin when not active */
+#dashboard:not(.active),
+#admin:not(.active) {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* Ensure home and login are properly visible */
+#home.active,
+#login.active {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: all !important;
+}
+
+/* Logout state styles */
+body.logged-out #dashboard,
+body.logged-out #admin {
+    display: none !important;
+}
+
+body.logged-out #home,
+body.logged-out #login {
+    display: block !important;
 }
