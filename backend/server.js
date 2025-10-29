@@ -3,6 +3,9 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 require('dotenv').config();
 
+// Connect PostgreSQL
+const { connectDB } = require('./config/database');
+
 // Import middleware
 const { 
     securityHeaders, 
@@ -11,15 +14,11 @@ const {
     handleValidationErrors 
 } = require('./middleware/validation');
 
-// Import routes
-const authRoutes = require('./routes/auth');
-const testRoutes = require('./routes/tests');
-const bookingRoutes = require('./routes/bookings');
-const hospitalRoutes = require('./routes/hospitals');
-const userRoutes = require('./routes/users');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Connect to the database before the app starts
 
 // Security middleware
 app.use(securityHeaders);
@@ -35,35 +34,26 @@ app.use('/api/auth/', authLimiter);
 app.use('/api/', apiLimiter);
 
 // Health check
-app.get('/api/health', async (req, res) => {
-    const { query } = require('./config/database');
-    
-    try {
-        // Test database connection
-        await query('SELECT 1');
-        
-        res.json({
-            success: true,
-            message: 'SpeciCare API is running with PostgreSQL',
-            timestamp: new Date().toISOString(),
-            database: 'PostgreSQL - Connected',
-            environment: process.env.NODE_ENV || 'development'
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'Database connection failed',
-            error: error.message
-        });
-    }
-});
+app.get('/api/health', (req, res) =>
+    res.send('Server is running'));
+
+// CORS configuration
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true, // Important: allow cookies
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
+}));
+
+app.options('*',cors);
+
 
 // API routes
-app.use('/api/auth', authRoutes);
-app.use('/api/tests', testRoutes);
-app.use('/api/bookings', bookingRoutes);
-app.use('/api/hospitals', hospitalRoutes);
-app.use('/api/users', userRoutes);
+app.use('/api/appointments', require('./routes/appointment'));
+app.use('/api/medical-test', require('./routes/medicalTest'));
+app.use('/api/users', require('./routes/users'));
+app.use('/api/test-results', require('./routes/testResult'));
+app.use('/api/admin', require('./routes/admin'));
 
 // 404 handler
 app.use('*', (req, res) => {
@@ -76,15 +66,14 @@ app.use('*', (req, res) => {
 // Global error handler
 app.use((error, req, res, next) => {
     console.error('Global error handler:', error);
-    
-    // Don't leak error details in production
+
     if (process.env.NODE_ENV === 'production') {
         return res.status(500).json({
             success: false,
             message: 'Internal server error'
         });
     }
-    
+
     res.status(500).json({
         success: false,
         message: error.message,
@@ -94,10 +83,16 @@ app.use((error, req, res, next) => {
 
 // Start server
 app.listen(PORT, () => {
-    console.log(`SpeciCare server running on port ${PORT}`);
-    console.log(`Database: PostgreSQL`);
-    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`Health check: http://localhost:${PORT}/api/health`);
+    console.log(" SpeciCare server running on port ${PORT}");
 });
+
+require('./models/index');
+
+const { sequelize } = require('./models')
+
+
+sequelize.sync().then(()=>console.log('created')).catch(err => console.error(err));
+
+
 
 module.exports = app;

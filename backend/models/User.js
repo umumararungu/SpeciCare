@@ -1,108 +1,93 @@
-const mongoose = require('mongoose');
+// models/User.js - FIXED VERSION
 const bcrypt = require('bcryptjs');
 
-const userSchema = new mongoose.Schema({
+module.exports = (sequelize, DataTypes) => {
+  const User = sequelize.define('User', {
+    id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true,
+    },
     name: {
-        type: String,
-        required: [true, 'Name is required'],
-        trim: true,
-        maxlength: [100, 'Name cannot exceed 100 characters']
+      type: DataTypes.STRING(100),
+      allowNull: false,
     },
     email: {
-        type: String,
-        required: [true, 'Email is required'],
-        unique: true,
-        lowercase: true,
-        trim: true,
-        match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email']
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      unique: true,
+      validate: {
+        isEmail: true,
+      },
     },
     phone: {
-        type: String,
-        required: [true, 'Phone number is required'],
-        unique: true,
-        trim: true,
-        match: [/^\+?250?\d{9}$/, 'Please enter a valid Rwandan phone number']
+      type: DataTypes.STRING(15),
+      allowNull: false,
+      unique: true,
     },
     password: {
-        type: String,
-        required: [true, 'Password is required'],
-        minlength: [6, 'Password must be at least 6 characters']
+      type: DataTypes.STRING,
+      allowNull: false,
     },
-    insuranceNumber: {
-        type: String,
-        trim: true
+    insurance_number: {
+      type: DataTypes.STRING,
     },
-    dateOfBirth: {
-        type: Date
+    date_of_birth: {
+      type: DataTypes.DATE,
     },
     gender: {
-        type: String,
-        enum: ['male', 'female', 'other'],
-        lowercase: true
+      type: DataTypes.ENUM('male', 'female'),
+      allowNull: true,
     },
     address: {
-        district: String,
-        sector: String,
-        cell: String,
-        village: String
+      type: DataTypes.JSONB,
+      defaultValue: {},
     },
     role: {
-        type: String,
-        enum: ['patient', 'admin', 'hospital_staff'],
-        default: 'patient'
+      type: DataTypes.ENUM('patient', 'admin', 'hospital_staff'),
+      defaultValue: 'patient',
     },
-    isActive: {
-        type: Boolean,
-        default: true
+    is_active: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true,
     },
-    lastLogin: {
-        type: Date
+    last_login: {
+      type: DataTypes.DATE,
     },
-    createdAt: {
-        type: Date,
-        default: Date.now
+    created_at: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
     },
-    updatedAt: {
-        type: Date,
-        default: Date.now
-    }
-});
+    updated_at: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
+    },
+  }, {
+    tableName: 'users',
+    timestamps: false,
+    underscored: true,
+    hooks: {
+      beforeSave: async (user) => {
+        if (user.changed('password')) {
+          const salt = await bcrypt.genSalt(12);
+          user.password = await bcrypt.hash(user.password, salt);
+        }
+        user.updated_at = new Date();
+      },
+    },
+  });
 
-// Hash password before saving
-userSchema.pre('save', async function(next) {
-    if (!this.isModified('password')) return next();
-    
-    try {
-        const salt = await bcrypt.genSalt(12);
-        this.password = await bcrypt.hash(this.password, salt);
-        next();
-    } catch (error) {
-        next(error);
-    }
-});
-
-// Update updatedAt timestamp before saving
-userSchema.pre('save', function(next) {
-    this.updatedAt = Date.now();
-    next();
-});
-
-// Compare password method
-userSchema.methods.comparePassword = async function(candidatePassword) {
+  //  Compare password - MUST BE DEFINED BEFORE RETURN
+  User.prototype.comparePassword = async function (candidatePassword) {
     return await bcrypt.compare(candidatePassword, this.password);
-};
+  };
 
-// Remove password from JSON output
-userSchema.methods.toJSON = function() {
-    const user = this.toObject();
+  //  Hide password in JSON responses
+  User.prototype.toJSON = function () {
+    const user = { ...this.get() };
     delete user.password;
     return user;
+  };
+
+  return User; // Return at the end, after defining all methods
 };
-
-// Index for better query performance
-userSchema.index({ email: 1 });
-userSchema.index({ phone: 1 });
-userSchema.index({ role: 1 });
-userSchema.index({ createdAt: -1 });
-
-module.exports = mongoose.model('User', userSchema);

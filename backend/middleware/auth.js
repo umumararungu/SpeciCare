@@ -1,76 +1,66 @@
+// middleware/auth.js
 const jwt = require('jsonwebtoken');
-const { query } = require('../config/database');
+const { User } = require('../models');
 
-const authenticateToken = async (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-
+const authenticate = async (req, res, next) => {
+  try {
+    const token = req.cookies?.token;
+    
     if (!token) {
-        return res.status(401).json({
-            success: false,
-            message: 'Access token required'
-        });
+      return res.status(401).json({ 
+        success: false,
+        message: 'Authentication required. Please login.' 
+      });
     }
 
-    try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        
-        // Verify user still exists and is active
-        const userResult = await query(
-            'SELECT id, email, role, is_active FROM users WHERE id = $1',
-            [decoded.userId]
-        );
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findByPk(decoded.userId, {
+      attributes: { exclude: ['password'] }
+    });
 
-        if (userResult.rows.length === 0 || !userResult.rows[0].is_active) {
-            return res.status(403).json({
-                success: false,
-                message: 'User not found or inactive'
-            });
-        }
-
-        req.user = {
-            userId: decoded.userId,
-            email: decoded.email,
-            role: userResult.rows[0].role
-        };
-        
-        next();
-    } catch (error) {
-        if (error.name === 'TokenExpiredError') {
-            return res.status(401).json({
-                success: false,
-                message: 'Token expired'
-            });
-        }
-        
-        return res.status(403).json({
-            success: false,
-            message: 'Invalid token'
-        });
+    if (!user) {
+      res.clearCookie('token');
+      return res.status(401).json({ 
+        success: false,
+        message: 'User not found' 
+      });
     }
+
+    if (!user.is_active) {
+      return res.status(401).json({ 
+        success: false,
+        message: 'Account is deactivated' 
+      });
+    }
+
+    req.user = user;
+    next();
+  } catch (error) {
+    console.error('Auth middleware error:', error);
+    
+    // Clear invalid token
+    res.clearCookie('token');
+    
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ 
+        success: false,
+        message: 'Invalid token' 
+      });
+    }
+    
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ 
+        success: false,
+        message: 'Token expired. Please login again.' 
+      });
+    }
+    
+    res.status(500).json({ 
+      success: false,
+      message: 'Authentication error',
+      error: error.message 
+    });
+  }
 };
 
-const requireRole = (roles) => {
-    return (req, res, next) => {
-        if (!req.user) {
-            return res.status(401).json({
-                success: false,
-                message: 'Authentication required'
-            });
-        }
-
-        if (!roles.includes(req.user.role)) {
-            return res.status(403).json({
-                success: false,
-                message: 'Insufficient permissions'
-            });
-        }
-
-        next();
-    };
-};
-
-module.exports = {
-    authenticateToken,
-    requireRole
-};
+module.exports = { authenticate };

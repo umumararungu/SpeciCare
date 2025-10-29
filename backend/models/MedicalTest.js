@@ -1,98 +1,84 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const sequelize = require('../config/database'); // from your psql connect file
 
-const medicalTestSchema = new mongoose.Schema({
-    name: {
-        type: String,
-        required: [true, 'Test name is required'],
-        trim: true,
-        maxlength: [200, 'Test name cannot exceed 200 characters']
-    },
-    description: {
-        type: String,
-        required: [true, 'Test description is required'],
-        maxlength: [1000, 'Description cannot exceed 1000 characters']
-    },
-    category: {
-        type: String,
-        required: [true, 'Category is required'],
-        enum: [
-            'radiology',
-            'laboratory',
-            'cardiology',
-            'neurology',
-            'pathology',
-            'endoscopy',
-            'pulmonology',
-            'other'
-        ],
-        lowercase: true
-    },
-    subcategory: {
-        type: String,
-        trim: true
-    },
-    price: {
-        type: Number,
-        required: [true, 'Price is required'],
-        min: [0, 'Price cannot be negative']
-    },
-    currency: {
-        type: String,
-        default: 'RWF',
-        uppercase: true
-    },
-    duration: {
-        type: String, // e.g., "30 minutes", "1 hour"
-        required: [true, 'Duration is required']
-    },
-    preparationInstructions: {
-        type: String,
-        maxlength: [2000, 'Preparation instructions cannot exceed 2000 characters']
-    },
-    isInsuranceCovered: {
-        type: Boolean,
-        default: true
-    },
-    insuranceCoPay: {
-        type: Number,
-        default: 0,
-        min: [0, 'Co-pay cannot be negative']
-    },
-    isAvailable: {
-        type: Boolean,
-        default: true
-    },
-    requirements: [{
-        type: String,
-        trim: true
-    }],
-    tags: [{
-        type: String,
-        trim: true,
-        lowercase: true
-    }],
-    createdAt: {
-        type: Date,
-        default: Date.now
-    },
-    updatedAt: {
-        type: Date,
-        default: Date.now
-    }
+module.exports = (sequelize, DataTypes) =>{
+return MedicalTest = sequelize.define('MedicalTest', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true,
+  },
+  name: {
+    type: DataTypes.STRING(200),
+    allowNull: false,
+  },
+  description: {
+    type: DataTypes.STRING(1000),
+    allowNull: false,
+  },
+  category: {
+    type: DataTypes.ENUM(
+      'radiology',
+      'laboratory',
+      'cardiology',
+      'neurology',
+      'pathology',
+      'endoscopy',
+      'pulmonology',
+      'other'
+    ),
+    allowNull: false,
+  },
+  subcategory: {
+    type: DataTypes.STRING,
+  },
+  price: {
+    type: DataTypes.FLOAT,
+    allowNull: false,
+  },
+  currency: {
+    type: DataTypes.STRING(10),
+    defaultValue: 'RWF',
+  },
+  duration: {
+    type: DataTypes.STRING,
+    allowNull: false, // e.g., "30 minutes"
+  },
+  preparation_instructions: {
+    type: DataTypes.STRING(2000),
+  },
+  is_insurance_covered: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true,
+  },
+  insurance_co_pay: {
+    type: DataTypes.FLOAT,
+    defaultValue: 0,
+  },
+  is_available: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true,
+  },
+  requirements: {
+    type: DataTypes.JSONB, // store array of strings
+    defaultValue: [],
+  },
+  tags: {
+    type: DataTypes.JSONB, // store array of strings
+    defaultValue: [],
+  },
+  createdAt: {
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW,
+  },
+  updatedAt: {
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW,
+  },
+}, {
+  tableName: 'medical_tests',
+  timestamps: true,
+  underscored: true,
 });
-
-// Update updatedAt timestamp before saving
-medicalTestSchema.pre('save', function(next) {
-    this.updatedAt = Date.now();
-    next();
-});
-
-// Index for better query performance
-medicalTestSchema.index({ name: 'text', description: 'text' });
-medicalTestSchema.index({ category: 1 });
-medicalTestSchema.index({ price: 1 });
-medicalTestSchema.index({ isAvailable: 1 });
-medicalTestSchema.index({ isInsuranceCovered: 1 });
-medicalTestSchema.index({ createdAt: -1 });
-
-module.exports = mongoose.model('MedicalTest', medicalTestSchema);
+}
+// module.exports = MedicalTest;

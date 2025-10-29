@@ -1,111 +1,258 @@
+// routes/users.js
 const express = require('express');
-const { query } = require('../config/database');
-const { authenticateToken, requireRole } = require('../middleware/auth');
-
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const { User } = require('../models');
 const router = express.Router();
 
-// Get user profile (already in auth, but added for completeness)
-router.get('/profile', authenticateToken, async (req, res) => {
-    try {
-        const result = await query(
-            `SELECT id, name, email, phone, insurance_number, date_of_birth, gender,
-                    district, sector, cell, village, role, created_at, last_login
-             FROM users WHERE id = $1`,
-            [req.user.userId]
-        );
+// Register new user
+router.post('/register', async (req, res) => {
+  try {
+    const {
+      name,
+      email,
+      phone,
+      password,
+      insuranceNumber,
+      dateOfBirth,
+      gender,
+      address,
+      role = 'patient'
+    } = req.body;
 
-        if (result.rows.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'User not found'
-            });
-        }
+    // Check if user already exists
+    const existingUser = await User.findOne({
+      where: { email: email.toLowerCase() }
+    });
 
-        const user = result.rows[0];
-
-        res.json({
-            success: true,
-            user: {
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                phone: user.phone,
-                insuranceNumber: user.insurance_number,
-                dateOfBirth: user.date_of_birth,
-                gender: user.gender,
-                district: user.district,
-                sector: user.sector,
-                cell: user.cell,
-                village: user.village,
-                role: user.role,
-                lastLogin: user.last_login,
-                createdAt: user.created_at
-            }
-        });
-
-    } catch (error) {
-        console.error('Get user profile error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to fetch user profile'
-        });
+    if (existingUser) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'User with this email already exists' 
+      });
     }
+
+    // Check if phone number exists
+    const existingPhone = await User.findOne({
+      where: { phone }
+    });
+
+    if (existingPhone) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'User with this phone number already exists' 
+      });
+    }
+
+    // Create new user
+    const user = await User.create({
+      name: name.trim(),
+      email: email.toLowerCase().trim(),
+      phone,
+      password,
+      insurance_number: insuranceNumber,
+      date_of_birth: dateOfBirth,
+      gender,
+      address: address || {},
+      role,
+      is_active: true
+    });
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: user.id, email: user.email, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN }
+    );
+
+    // Set cookie
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'User registered successfully',
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        insurance_number: user.insurance_number,
+        date_of_birth: user.date_of_birth,
+        gender: user.gender,
+        address: user.address
+      }
+    });
+
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Error creating user account',
+      error: error.message 
+    });
+  }
 });
 
-// Update user profile
-router.put('/profile', authenticateToken, async (req, res) => {
-    try {
-        const {
-            name, dateOfBirth, gender, district, sector, cell, village, insuranceNumber
-        } = req.body;
+// Login user
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
 
-        const result = await query(
-            `UPDATE users 
-             SET name = $1, date_of_birth = $2, gender = $3, district = $4, 
-                 sector = $5, cell = $6, village = $7, insurance_number = $8,
-                 updated_at = CURRENT_TIMESTAMP
-             WHERE id = $9
-             RETURNING id, name, email, phone, insurance_number, date_of_birth, gender,
-                       district, sector, cell, village, role, created_at`,
-            [name, dateOfBirth, gender, district, sector, cell, village, insuranceNumber, req.user.userId]
-        );
-
-        if (result.rows.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'User not found'
-            });
-        }
-
-        const user = result.rows[0];
-
-        res.json({
-            success: true,
-            message: 'Profile updated successfully',
-            user: {
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                phone: user.phone,
-                insuranceNumber: user.insurance_number,
-                dateOfBirth: user.date_of_birth,
-                gender: user.gender,
-                district: user.district,
-                sector: user.sector,
-                cell: user.cell,
-                village: user.village,
-                role: user.role,
-                createdAt: user.created_at
-            }
-        });
-
-    } catch (error) {
-        console.error('Update profile error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to update profile'
-        });
+    // Validate input
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email and password are required'
+      });
     }
+
+    // Find user by email
+    const user = await User.findOne({ 
+      where: { email: email.toLowerCase() } 
+    });
+
+    if (!user) {
+      return res.status(401).json({ 
+        success: false,
+        message: 'Invalid email or password' 
+      });
+    }
+
+    if (!user.is_active) {
+      return res.status(401).json({ 
+        success: false,
+        message: 'Account is deactivated' 
+      });
+    }
+
+    // Check password
+    const isPasswordValid = await user.comparePassword(password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ 
+        success: false,
+        message: 'Invalid email or password' 
+      });
+    }
+
+    // Update last login
+    await user.update({ last_login: new Date() });
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: user.id, email: user.email, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN }
+    );
+
+    // Set cookie
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+
+    res.json({
+      success: true,
+      message: 'Login successful',
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        insurance_number: user.insurance_number,
+        date_of_birth: user.date_of_birth,
+        gender: user.gender,
+        address: user.address,
+        last_login: user.last_login
+      }
+    });
+
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Error during login',
+      error: error.message 
+    });
+  }
+});
+
+// Logout user
+router.post('/logout', (req, res) => {
+  res.clearCookie('token');
+  res.json({ 
+    success: true,
+    message: 'Logout successful' 
+  });
+});
+
+// Get current user - FIXED VERSION
+router.get('/me', async (req, res) => {
+  try {
+    const token = req.cookies?.token;
+    
+    if (!token) {
+      return res.status(401).json({ 
+        success: false,
+        message: 'Not authenticated. Please login.' 
+      });
+    }
+
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // Find user
+    const user = await User.findByPk(decoded.userId, {
+      attributes: { exclude: ['password'] }
+    });
+
+    if (!user) {
+      // Clear invalid token
+      res.clearCookie('token');
+      return res.status(404).json({ 
+        success: false,
+        message: 'User not found' 
+      });
+    }
+
+    if (!user.is_active) {
+      return res.status(401).json({ 
+        success: false,
+        message: 'Account is deactivated' 
+      });
+    }
+
+    res.json({
+      success: true,
+      user: user
+    });
+
+  } catch (error) {
+    console.error('Get user error:', error);
+    
+    // Clear invalid token
+    res.clearCookie('token');
+    
+    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+      return res.status(401).json({ 
+        success: false,
+        message: 'Invalid or expired token. Please login again.' 
+      });
+    }
+    
+    res.status(500).json({ 
+      success: false,
+      message: 'Error fetching user data',
+      error: error.message 
+    });
+  }
 });
 
 module.exports = router;
