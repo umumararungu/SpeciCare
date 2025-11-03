@@ -1,27 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import { useApp } from '../../context/AppContext';
+import React, { useState, useEffect } from "react";
+import { useApp } from "../../context/AppContext";
 
 const BookingModal = () => {
-  const { currentTest, confirmBooking, setCurrentTest, currentUser } = useApp();
+  const { currentTest, confirmBooking, setCurrentTest, currentUser,hospitals } = useApp();
   const [bookingData, setBookingData] = useState({
-    patientName: '',
-    patientPhone: '',
-    patientEmail: '',
-    insuranceNumber: '',
-    appointmentDate: '',
-    notes: ''
+    patientName: "",
+    patientPhone: "",
+    patientEmail: "",
+    insuranceNumber: "",
+    appointment_date: "",
+    time_slot: "",
   });
 
   // Reset form when modal opens/closes or user changes
   useEffect(() => {
     if (currentTest && currentUser) {
       setBookingData({
-        patientName: currentUser?.name || '',
-        patientPhone: currentUser?.phone || '',
-        patientEmail: currentUser?.email || '',
-        insuranceNumber: currentUser?.insuranceNumber || '',
-        appointmentDate: '',
-        notes: ''
+        patientName: currentUser?.name || "",
+        patientPhone: currentUser?.phone || "",
+        patientEmail: currentUser?.email || "",
+        insuranceNumber: currentUser?.insuranceNumber || "",
+        appointment_date: "",
+        time_slot: "",
+
       });
     }
   }, [currentTest, currentUser]);
@@ -29,49 +30,49 @@ const BookingModal = () => {
   // Close modal when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      const modal = document.getElementById('bookingModal');
+      const modal = document.getElementById("bookingModal");
       if (event.target === modal) {
         setCurrentTest(null);
       }
     };
 
     if (currentTest) {
-      document.addEventListener('click', handleClickOutside);
-      document.body.classList.add('modal-open');
+      document.addEventListener("click", handleClickOutside);
+      document.body.classList.add("modal-open");
     } else {
-      document.body.classList.remove('modal-open');
+      document.body.classList.remove("modal-open");
     }
 
     return () => {
-      document.removeEventListener('click', handleClickOutside);
-      document.body.classList.remove('modal-open');
+      document.removeEventListener("click", handleClickOutside);
+      document.body.classList.remove("modal-open");
     };
   }, [currentTest, setCurrentTest]);
 
   // Close modal with escape key
   useEffect(() => {
     const handleEscapeKey = (event) => {
-      if (event.key === 'Escape' && currentTest) {
+      if (event.key === "Escape" && currentTest) {
         setCurrentTest(null);
       }
     };
 
-    document.addEventListener('keydown', handleEscapeKey);
+    document.addEventListener("keydown", handleEscapeKey);
     return () => {
-      document.removeEventListener('keydown', handleEscapeKey);
+      document.removeEventListener("keydown", handleEscapeKey);
     };
   }, [currentTest, setCurrentTest]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
-    if (!bookingData.appointmentDate) {
-      alert('Please select an appointment date');
+
+    if (!bookingData.appointment_date) {
+      alert("Please select an appointment date");
       return;
     }
 
     if (!bookingData.patientName || !bookingData.patientPhone) {
-      alert('Please fill in all required fields');
+      alert("Please fill in all required fields");
       return;
     }
 
@@ -79,8 +80,8 @@ const BookingModal = () => {
       ...bookingData,
       testId: currentTest.id,
       testName: currentTest.name,
-      hospital: currentTest.hospital,
-      price: currentTest.price
+      hospitalId: currentTest.hospital_id,
+      price: currentTest.price,
     };
 
     confirmBooking(completeBookingData);
@@ -88,9 +89,9 @@ const BookingModal = () => {
   };
 
   const handleChange = (field, value) => {
-    setBookingData(prev => ({
+    setBookingData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
@@ -99,15 +100,19 @@ const BookingModal = () => {
     return null;
   }
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toISOString().split("T")[0];
+
+  const hospital = hospitals.find(
+        (hospital) => currentTest.hospital_id === hospital.id
+      );
 
   return (
-    <div id="bookingModal" className="modal" style={{ display: 'block' }}>
-      <div className="modal-content">
-        <span 
-          className="close" 
+    <div id="bookingModal" className="modal" style={{ display: "block" }}>
+      <div className="modal-content show">
+        <span
+          className="close"
           onClick={() => setCurrentTest(null)}
-          style={{ cursor: 'pointer' }}
+          style={{ cursor: "pointer" }}
         >
           &times;
         </span>
@@ -119,66 +124,76 @@ const BookingModal = () => {
           </div>
           <div className="form-group">
             <label>Hospital</label>
-            <input type="text" value={currentTest.hospital} readOnly />
+            <input type="text" value={hospital.name} readOnly />
           </div>
           <div className="form-group">
             <label>Price</label>
-            <input type="text" value={`${currentTest.price.toLocaleString()} RWF`} readOnly />
+            <input
+              type="text"
+              value={`${currentTest.price.toLocaleString()} RWF`}
+              readOnly
+            />
           </div>
           <div className="form-group">
             <label>Full Name *</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={bookingData.patientName}
-              onChange={(e) => handleChange('patientName', e.target.value)}
-              required 
+              onChange={(e) => handleChange("patientName", e.target.value)}
+              required
             />
           </div>
           <div className="form-group">
             <label>Phone Number *</label>
-            <input 
-              type="tel" 
+            <input
+              type="tel"
               value={bookingData.patientPhone}
-              onChange={(e) => handleChange('patientPhone', e.target.value)}
-              required 
+              onChange={(e) => handleChange("patientPhone", e.target.value)}
+              required
             />
           </div>
           <div className="form-group">
             <label>Email Address</label>
-            <input 
-              type="email" 
+            <input
+              type="email"
               value={bookingData.patientEmail}
-              onChange={(e) => handleChange('patientEmail', e.target.value)}
+              onChange={(e) => handleChange("patientEmail", e.target.value)}
             />
           </div>
           <div className="form-group">
             <label>Insurance Number (CBHI)</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={bookingData.insuranceNumber}
-              onChange={(e) => handleChange('insuranceNumber', e.target.value)}
+              onChange={(e) => handleChange("insuranceNumber", e.target.value)}
               placeholder="Enter if applicable"
             />
           </div>
           <div className="form-group">
             <label>Preferred Date *</label>
-            <input 
-              type="date" 
-              value={bookingData.appointmentDate}
-              onChange={(e) => handleChange('appointmentDate', e.target.value)}
+            <input
+              type="date"
+              value={bookingData.appointment_date}
+              onChange={(e) => handleChange("appointment_date", e.target.value)}
               min={today}
-              required 
+              required
             />
           </div>
-          <div className="form-group">
-            <label>Additional Notes</label>
-            <textarea 
-              value={bookingData.notes}
-              onChange={(e) => handleChange('notes', e.target.value)}
-              placeholder="Any special requirements or notes"
-            ></textarea>
+
+                    <div className="form-group">
+            <label>Preferred time*</label>
+            <input
+              type="time"
+              value={bookingData.time_slot}
+              onChange={(e) => handleChange("time_slot", e.target.value)}
+              min={today}
+              required
+            />
           </div>
-          <button type="submit" className="submit-btn">Confirm Booking</button>
+
+          <button type="submit" className="submit-btn">
+            Confirm Booking
+          </button>
         </form>
       </div>
     </div>
@@ -186,4 +201,3 @@ const BookingModal = () => {
 };
 
 export default BookingModal;
-

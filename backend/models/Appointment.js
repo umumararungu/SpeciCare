@@ -2,56 +2,56 @@
 const { DataTypes } = require('sequelize');
 
 module.exports = (sequelize, DataTypes) => {
-  const Appointment = sequelize.define('Appointment', {
+  const Appointment = sequelize.define('appointment', {
     id: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
     },
-    patientId: {
+    patient_id: {
       type: DataTypes.UUID,
       allowNull: false,
     },
-    hospitalId: {
+    hospital_id: {
       type: DataTypes.UUID,
       allowNull: false,
     },
-    testId: {
+    test_id: {
       type: DataTypes.UUID,
       allowNull: false,
     },
-    date: {
+    appointment_date: {
       type: DataTypes.DATEONLY,
       allowNull: false,
+      field:'appointment_date',
     },
-    time: {
+    time_slot: {
       type: DataTypes.STRING(20),
       allowNull: false,
+      field:'time_slot',
     },
-    reason: {
-      type: DataTypes.STRING(500),
-    },
-    type: {
-      type: DataTypes.ENUM('consultation', 'follow-up', 'lab-test', 'emergency'),
-      defaultValue: 'consultation',
-    },
+    // reason: {
+    //   type: DataTypes.STRING(500),
+    // },
+    // type: {
+    //   type: DataTypes.ENUM('consultation', 'follow-up', 'lab-test', 'emergency'),
+    //   defaultValue: 'consultation',
+    // },
     status: {
       type: DataTypes.ENUM('pending', 'confirmed', 'cancelled', 'completed', 'rescheduled'),
       defaultValue: 'pending',
     },
-    notes: {
-      type: DataTypes.JSONB,
-      defaultValue: {},
+    // notes: {
+    //   type: DataTypes.JSONB,
+    //   defaultValue: {},
+    // },
+    reminder_sms_sent_at: {
+      type: DataTypes.DATE,
     },
-    reminders: {
-      type: DataTypes.JSONB,
-      defaultValue: [],
+    payment_method: {
+      type: DataTypes.STRING,
     },
-    payment_info: {
-      type: DataTypes.JSONB,
-      defaultValue: {},
-    },
-    follow_up: {
+    previous_tests: {
       type: DataTypes.JSONB,
       defaultValue: {},
     }

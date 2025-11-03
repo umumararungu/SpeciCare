@@ -2,10 +2,11 @@
 const bcrypt = require('bcryptjs');
 
 module.exports = (sequelize, DataTypes) => {
-  const User = sequelize.define('User', {
+  const User = sequelize.define('user', {
     id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
+      type: DataTypes.INTEGER,
+      // defaultValue: DataTypes.UUIDV4,
+      autoIncrement: true,
       primaryKey: true,
     },
     name: {
@@ -39,9 +40,21 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.ENUM('male', 'female'),
       allowNull: true,
     },
-    address: {
-      type: DataTypes.JSONB,
-      defaultValue: {},
+    district: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    sector: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    cell: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    village: {
+      type: DataTypes.STRING,
+      allowNull: true,
     },
     role: {
       type: DataTypes.ENUM('patient', 'admin', 'hospital_staff'),

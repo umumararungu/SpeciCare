@@ -1,37 +1,46 @@
-const express = require('express');
-const { User, Appointment, MedicalTest, TestResult, Hospital } = require('../models');
-const { authenticate } = require('../middleware/auth');
+const express = require("express");
+const {
+  User,
+  Appointment,
+  MedicalTest,
+  TestResult,
+  Hospital,
+} = require("../models");
+const hospitalController = require("../controllers/hospital");
+const { authenticate } = require("../middleware/auth");
 const router = express.Router();
 
 // Admin middleware to check if user is admin
 const requireAdmin = (req, res, next) => {
-  if (req.user.role !== 'admin') {
+  if (req.user.role !== "admin") {
     return res.status(403).json({
       success: false,
-      message: 'Access denied. Admin privileges required.'
+      message: "Access denied. Admin privileges required.",
     });
   }
   next();
 };
 
 // Get admin dashboard stats
-router.get('/dashboard/stats', authenticate, requireAdmin, async (req, res) => {
+router.get("/dashboard/stats", authenticate, requireAdmin, async (req, res) => {
   try {
     const totalUsers = await User.count();
     const totalBookings = await Appointment.count();
     const totalTests = await MedicalTest.count();
     const totalHospitals = await Hospital.count();
-    
+
     // Calculate revenue from completed appointments
     const revenueData = await Appointment.findAll({
-      include: [{
-        model: MedicalTest,
-        as: 'medicalTest',
-        attributes: ['price']
-      }],
-      where: { status: 'completed' }
+      include: [
+        {
+          model: MedicalTest,
+          as: "medicalTest",
+          attributes: ["price"],
+        },
+      ],
+      where: { status: "completed" },
     });
-    
+
     const totalRevenue = revenueData.reduce((sum, appointment) => {
       return sum + (appointment.medicalTest?.price || 0);
     }, 0);
@@ -43,48 +52,48 @@ router.get('/dashboard/stats', authenticate, requireAdmin, async (req, res) => {
         totalBookings,
         totalTests,
         totalHospitals,
-        totalRevenue
-      }
+        totalRevenue,
+      },
     });
   } catch (error) {
-    console.error('Dashboard stats error:', error);
+    console.error("Dashboard stats error:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching dashboard statistics',
-      error: error.message
+      message: "Error fetching dashboard statistics",
+      error: error.message,
     });
   }
 });
 
 // Get all users (for admin)
-router.get('/users', authenticate, requireAdmin, async (req, res) => {
+router.get("/users", authenticate, requireAdmin, async (req, res) => {
   try {
     const users = await User.findAll({
-      attributes: { exclude: ['password'] },
-      order: [['created_at', 'DESC']]
+      attributes: { exclude: ["password"] },
+      order: [["created_at", "DESC"]],
     });
 
     res.json({
       success: true,
-      users: users
+      users: users,
     });
   } catch (error) {
-    console.error('Get users error:', error);
+    console.error("Get users error:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching users',
-      error: error.message
+      message: "Error fetching users",
+      error: error.message,
     });
   }
 });
 
 // Get all appointments (for admin)
-router.get('/appointments', authenticate, requireAdmin, async (req, res) => {
+router.get("/appointments", authenticate, requireAdmin, async (req, res) => {
   try {
     const { status } = req.query;
-    
+
     const whereClause = {};
-    if (status && status !== 'all') {
+    if (status && status !== "all") {
       whereClause.status = status;
     }
 
@@ -93,114 +102,123 @@ router.get('/appointments', authenticate, requireAdmin, async (req, res) => {
       include: [
         {
           model: User,
-          as: 'patient',
-          attributes: ['id', 'name', 'email', 'phone']
+          as: "user",
+          attributes: ["id", "name", "email", "phone"],
         },
         {
           model: Hospital,
-          as: 'hospital',
-          attributes: ['id', 'name', 'address']
+          as: "hospital",
+          attributes: ["id", "name", "province","district","sector","cell","village","street","latitude","longitude"],
         },
         {
           model: MedicalTest,
-          as: 'medicalTest',
-          attributes: ['id', 'name', 'price', 'category', 'duration']
-        }
+          as: "medicalTest",
+          attributes: ["id", "name", "price", "category", "duration"],
+        },
       ],
-      order: [['date', 'DESC'], ['time', 'DESC']]
+      order: [
+        ["appointment_date", "DESC"],
+        ["time_slot", "DESC"],
+      ],
     });
 
     res.json({
       success: true,
-      appointments: appointments
+      appointments: appointments,
     });
   } catch (error) {
-    console.error('Get appointments error:', error);
+    console.error("Get appointments error:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching appointments',
-      error: error.message
+      message: "Error fetching appointments",
+      error: error.message,
     });
   }
 });
 
 // Update appointment status
-router.put('/appointments/:id/status', authenticate, requireAdmin, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { status } = req.body;
+router.put(
+  "/appointments/:id/status",
+  authenticate,
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
 
-    const validStatuses = ['pending', 'confirmed', 'completed', 'cancelled'];
-    if (!validStatuses.includes(status)) {
-      return res.status(400).json({
+      const validStatuses = ["pending", "confirmed", "completed", "cancelled"];
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid status",
+        });
+      }
+
+      const appointment = await Appointment.findByPk(id);
+      if (!appointment) {
+        return res.status(404).json({
+          success: false,
+          message: "Appointment not found",
+        });
+      }
+
+      await appointment.update({ status });
+
+      res.json({
+        success: true,
+        message: `Appointment ${status} successfully`,
+        appointment: appointment,
+      });
+    } catch (error) {
+      console.error("Update appointment error:", error);
+      res.status(500).json({
         success: false,
-        message: 'Invalid status'
+        message: "Error updating appointment",
+        error: error.message,
       });
     }
-
-    const appointment = await Appointment.findByPk(id);
-    if (!appointment) {
-      return res.status(404).json({
-        success: false,
-        message: 'Appointment not found'
-      });
-    }
-
-    await appointment.update({ status });
-
-    res.json({
-      success: true,
-      message: `Appointment ${status} successfully`,
-      appointment: appointment
-    });
-  } catch (error) {
-    console.error('Update appointment error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error updating appointment',
-      error: error.message
-    });
   }
-});
+);
 
 // Get all medical tests (for admin)
-router.get('/medical-tests', authenticate, requireAdmin, async (req, res) => {
+router.get("/medical-test", authenticate, requireAdmin, async (req, res) => {
   try {
     const tests = await MedicalTest.findAll({
-      order: [['name', 'ASC']]
+      order: [["name", "ASC"]],
     });
 
     res.json({
       success: true,
-      tests: tests
+      tests: tests,
     });
   } catch (error) {
-    console.error('Get medical tests error:', error);
+    console.error("Get medical tests error:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching medical tests',
-      error: error.message
+      message: "Error fetching medical tests",
+      error: error.message,
     });
   }
 });
 
 // Create new medical test
-router.post('/medical-tests', authenticate, requireAdmin, async (req, res) => {
+router.post("/medical-test", authenticate, requireAdmin, async (req, res) => {
   try {
     const {
       name,
       description,
       category,
       subcategory,
+      hospital_id,
       price,
-      currency = 'RWF',
+      currency = "RWF",
       duration,
       preparation_instructions,
       is_insurance_covered = true,
       insurance_co_pay = 0,
       is_available = true,
       requirements = [],
-      tags = []
+      tags = [],
     } = req.body;
 
     const test = await MedicalTest.create({
@@ -208,6 +226,7 @@ router.post('/medical-tests', authenticate, requireAdmin, async (req, res) => {
       description,
       category,
       subcategory,
+      hospital_id,
       price: parseFloat(price),
       currency,
       duration,
@@ -216,86 +235,96 @@ router.post('/medical-tests', authenticate, requireAdmin, async (req, res) => {
       insurance_co_pay: parseFloat(insurance_co_pay),
       is_available,
       requirements,
-      tags
+      tags,
     });
 
     res.status(201).json({
       success: true,
-      message: 'Medical test created successfully',
-      test: test
+      message: "Medical test created successfully",
+      test: test,
     });
   } catch (error) {
-    console.error('Create medical test error:', error);
+    console.error("Create medical test error:", error);
     res.status(500).json({
       success: false,
-      message: 'Error creating medical test',
-      error: error.message
+      message: "Error creating medical test",
+      error: error.message,
     });
   }
 });
 
 // Update medical test
-router.put('/medical-tests/:id', authenticate, requireAdmin, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const updateData = req.body;
+router.put(
+  "/medical-test/:id",
+  authenticate,
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updateData = req.body;
 
-    const test = await MedicalTest.findByPk(id);
-    if (!test) {
-      return res.status(404).json({
+      const test = await MedicalTest.findByPk(id);
+      if (!test) {
+        return res.status(404).json({
+          success: false,
+          message: "Medical test not found",
+        });
+      }
+
+      await test.update(updateData);
+
+      res.json({
+        success: true,
+        message: "Medical test updated successfully",
+        test: test,
+      });
+    } catch (error) {
+      console.error("Update medical test error:", error);
+      res.status(500).json({
         success: false,
-        message: 'Medical test not found'
+        message: "Error updating medical test",
+        error: error.message,
       });
     }
-
-    await test.update(updateData);
-
-    res.json({
-      success: true,
-      message: 'Medical test updated successfully',
-      test: test
-    });
-  } catch (error) {
-    console.error('Update medical test error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error updating medical test',
-      error: error.message
-    });
   }
-});
+);
 
 // Delete medical test
-router.delete('/medical-tests/:id', authenticate, requireAdmin, async (req, res) => {
-  try {
-    const { id } = req.params;
+router.delete(
+  "/medical-test/:id",
+  authenticate,
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
 
-    const test = await MedicalTest.findByPk(id);
-    if (!test) {
-      return res.status(404).json({
+      const test = await MedicalTest.findByPk(id);
+      if (!test) {
+        return res.status(404).json({
+          success: false,
+          message: "Medical test not found",
+        });
+      }
+
+      await test.destroy();
+
+      res.json({
+        success: true,
+        message: "Medical test deleted successfully",
+      });
+    } catch (error) {
+      console.error("Delete medical test error:", error);
+      res.status(500).json({
         success: false,
-        message: 'Medical test not found'
+        message: "Error deleting medical test",
+        error: error.message,
       });
     }
-
-    await test.destroy();
-
-    res.json({
-      success: true,
-      message: 'Medical test deleted successfully'
-    });
-  } catch (error) {
-    console.error('Delete medical test error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error deleting medical test',
-      error: error.message
-    });
   }
-});
+);
 
 // Delete user (admin only)
-router.delete('/users/:id', authenticate, requireAdmin, async (req, res) => {
+router.delete("/users/:id", authenticate, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -303,7 +332,7 @@ router.delete('/users/:id', authenticate, requireAdmin, async (req, res) => {
     if (id === req.user.id) {
       return res.status(400).json({
         success: false,
-        message: 'Cannot delete your own account'
+        message: "Cannot delete your own account",
       });
     }
 
@@ -311,7 +340,7 @@ router.delete('/users/:id', authenticate, requireAdmin, async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: "User not found",
       });
     }
 
@@ -319,16 +348,40 @@ router.delete('/users/:id', authenticate, requireAdmin, async (req, res) => {
 
     res.json({
       success: true,
-      message: 'User deleted successfully'
+      message: "User deleted successfully",
     });
   } catch (error) {
-    console.error('Delete user error:', error);
+    console.error("Delete user error:", error);
     res.status(500).json({
       success: false,
-      message: 'Error deleting user',
-      error: error.message
+      message: "Error deleting user",
+      error: error.message,
     });
   }
 });
+
+// Get all hospitals (for admin)
+router.post(
+  "/hospitals",
+  authenticate,
+  requireAdmin,
+  hospitalController.createHospital
+);
+
+// Update a hospital
+router.put(
+  "/hospitals/:id",
+  authenticate,
+  requireAdmin,
+  hospitalController.updateHospital
+);
+
+// Delete a hospital
+router.delete(
+  "/hospitals/:id",
+  authenticate,
+  requireAdmin,
+  hospitalController.deleteHospital
+);
 
 module.exports = router;

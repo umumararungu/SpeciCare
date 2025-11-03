@@ -4,10 +4,11 @@ const sequelize = require('../config/database');
 
 
 module.exports = (sequelize, DataTypes) =>{
-return Hospital = sequelize.define('Hospital', {
+return Hospital = sequelize.define('hospital', {
   id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
+    type: DataTypes.INTEGER,
+    // defaultValue: DataTypes.UUIDV4,
+    autoIncrement: true,
     primaryKey: true,
   },
   name: {
@@ -26,33 +27,54 @@ return Hospital = sequelize.define('Hospital', {
     type: DataTypes.STRING(20),
     allowNull: false,
   },
-  address: {
-    type: DataTypes.JSONB, // holds district, sector, cell, village
-    defaultValue: {},
-  },
-  departments: {
-    type: DataTypes.JSONB, // e.g. [{ name: "Lab", head: "Dr. X" }]
-    defaultValue: [],
-  },
+    province: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+
+    district: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    sector: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    cell: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    village: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    street: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    latitude: {
+      type: DataTypes.DECIMAL,
+      allowNull: true,
+    },
+    longitude: {
+      type: DataTypes.DECIMAL,
+      allowNull: true,
+    },
+
+
   facilities: {
     type: DataTypes.JSONB, // e.g. ["X-ray", "CT Scan", "Emergency"]
     defaultValue: [],
   },
-  license_number: {
+  registration_number: {
     type: DataTypes.STRING(100),
   },
-  accreditation: {
-    type: DataTypes.JSONB, // { body: "Rwanda Medical Board", status: "approved" }
-    defaultValue: {},
-  },
+
   is_active: {
     type: DataTypes.BOOLEAN,
     defaultValue: true,
   },
-  metadata: {
-    type: DataTypes.JSONB, // store flexible additional info
-    defaultValue: {},
-  },
+
   createdAt: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW,

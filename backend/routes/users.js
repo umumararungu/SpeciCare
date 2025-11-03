@@ -1,12 +1,12 @@
 // routes/users.js
-const express = require('express');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const { User } = require('../models');
+const express = require("express");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const { User } = require("../models");
 const router = express.Router();
 
 // Register new user
-router.post('/register', async (req, res) => {
+router.post("/register", async (req, res) => {
   try {
     const {
       name,
@@ -16,31 +16,34 @@ router.post('/register', async (req, res) => {
       insuranceNumber,
       dateOfBirth,
       gender,
-      address,
-      role = 'patient'
+      district,
+      sector,
+      cell,
+      village,
+      role = "patient",
     } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({
-      where: { email: email.toLowerCase() }
+      where: { email: email.toLowerCase() },
     });
 
     if (existingUser) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        message: 'User with this email already exists' 
+        message: "User with this email already exists",
       });
     }
 
     // Check if phone number exists
     const existingPhone = await User.findOne({
-      where: { phone }
+      where: { phone },
     });
 
     if (existingPhone) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        message: 'User with this phone number already exists' 
+        message: "User with this phone number already exists",
       });
     }
 
@@ -53,9 +56,12 @@ router.post('/register', async (req, res) => {
       insurance_number: insuranceNumber,
       date_of_birth: dateOfBirth,
       gender,
-      address: address || {},
+      district,
+      sector,
+      cell,
+      village,
       role,
-      is_active: true
+      is_active: true,
     });
 
     // Generate JWT token
@@ -66,15 +72,15 @@ router.post('/register', async (req, res) => {
     );
 
     // Set cookie
-    res.cookie('token', token, {
+    res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
     res.status(201).json({
       success: true,
-      message: 'User registered successfully',
+      message: "User registered successfully",
       user: {
         id: user.id,
         name: user.name,
@@ -84,22 +90,25 @@ router.post('/register', async (req, res) => {
         insurance_number: user.insurance_number,
         date_of_birth: user.date_of_birth,
         gender: user.gender,
-        address: user.address
-      }
-    });
+        district: user.district,
+        sector: user.sector,
+        cell: user.cell,
+        village: user.village,        
 
+      },
+    });
   } catch (error) {
-    console.error('Registration error:', error);
-    res.status(500).json({ 
+    console.error("Registration error:", error);
+    res.status(500).json({
       success: false,
-      message: 'Error creating user account',
-      error: error.message 
+      message: "Error creating user account",
+      error: error.message,
     });
   }
 });
 
 // Login user
-router.post('/login', async (req, res) => {
+router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -107,35 +116,35 @@ router.post('/login', async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({
         success: false,
-        message: 'Email and password are required'
+        message: "Email and password are required",
       });
     }
 
     // Find user by email
-    const user = await User.findOne({ 
-      where: { email: email.toLowerCase() } 
+    const user = await User.findOne({
+      where: { email: email.toLowerCase() },
     });
 
     if (!user) {
-      return res.status(401).json({ 
+      return res.status(401).json({
         success: false,
-        message: 'Invalid email or password' 
+        message: "Invalid email or password",
       });
     }
 
     if (!user.is_active) {
-      return res.status(401).json({ 
+      return res.status(401).json({
         success: false,
-        message: 'Account is deactivated' 
+        message: "Account is deactivated",
       });
     }
 
     // Check password
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
-      return res.status(401).json({ 
+      return res.status(401).json({
         success: false,
-        message: 'Invalid email or password' 
+        message: "Invalid email or password",
       });
     }
 
@@ -150,16 +159,16 @@ router.post('/login', async (req, res) => {
     );
 
     // Set cookie
-    res.cookie('token', token, {
+    res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
     res.json({
       success: true,
-      message: 'Login successful',
+      message: "Login successful",
       user: {
         id: user.id,
         name: user.name,
@@ -169,88 +178,93 @@ router.post('/login', async (req, res) => {
         insurance_number: user.insurance_number,
         date_of_birth: user.date_of_birth,
         gender: user.gender,
-        address: user.address,
-        last_login: user.last_login
-      }
+        district: user.district,
+        sector: user.sector,
+        cell: user.cell,
+        village: user.village,        
+        last_login: user.last_login,
+      },
     });
-
   } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ 
+    console.error("Login error:", error);
+    res.status(500).json({
       success: false,
-      message: 'Error during login',
-      error: error.message 
+      message: "Error during login",
+      error: error.message,
     });
   }
 });
 
 // Logout user
-router.post('/logout', (req, res) => {
-  res.clearCookie('token');
-  res.json({ 
+router.post("/logout", (req, res) => {
+  res.clearCookie("token");
+  res.json({
     success: true,
-    message: 'Logout successful' 
+    message: "Logout successful",
   });
 });
 
 // Get current user - FIXED VERSION
-router.get('/me', async (req, res) => {
+router.get("/me", async (req, res) => {
   try {
     const token = req.cookies?.token;
-    
+
     if (!token) {
-      return res.status(401).json({ 
+      return res.status(401).json({
         success: false,
-        message: 'Not authenticated. Please login.' 
+        message: "Not authenticated. Please login.",
       });
     }
 
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
+    console.log("decode: ", decoded);
+
     // Find user
     const user = await User.findByPk(decoded.userId, {
-      attributes: { exclude: ['password'] }
+      attributes: { exclude: ["password"] },
     });
 
     if (!user) {
       // Clear invalid token
-      res.clearCookie('token');
-      return res.status(404).json({ 
+      res.clearCookie("token");
+      return res.status(404).json({
         success: false,
-        message: 'User not found' 
+        message: "User not found",
       });
     }
 
     if (!user.is_active) {
-      return res.status(401).json({ 
+      return res.status(401).json({
         success: false,
-        message: 'Account is deactivated' 
+        message: "Account is deactivated",
       });
     }
 
     res.json({
       success: true,
-      user: user
+      user: user,
     });
-
   } catch (error) {
-    console.error('Get user error:', error);
-    
+    console.error("Get user error:", error);
+
     // Clear invalid token
-    res.clearCookie('token');
-    
-    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
-      return res.status(401).json({ 
+    res.clearCookie("token");
+
+    if (
+      error.name === "JsonWebTokenError" ||
+      error.name === "TokenExpiredError"
+    ) {
+      return res.status(401).json({
         success: false,
-        message: 'Invalid or expired token. Please login again.' 
+        message: "Invalid or expired token. Please login again.",
       });
     }
-    
-    res.status(500).json({ 
+
+    res.status(500).json({
       success: false,
-      message: 'Error fetching user data',
-      error: error.message 
+      message: "Error fetching user data",
+      error: error.message,
     });
   }
 });

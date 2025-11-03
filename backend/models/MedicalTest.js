@@ -2,7 +2,7 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database'); // from your psql connect file
 
 module.exports = (sequelize, DataTypes) =>{
-return MedicalTest = sequelize.define('MedicalTest', {
+return MedicalTest = sequelize.define('medicalTest', {
   id: {
     type: DataTypes.UUID,
     defaultValue: DataTypes.UUIDV4,
@@ -31,6 +31,9 @@ return MedicalTest = sequelize.define('MedicalTest', {
   },
   subcategory: {
     type: DataTypes.STRING,
+  },
+  hospital_id: {
+    type: DataTypes.UUID,
   },
   price: {
     type: DataTypes.FLOAT,

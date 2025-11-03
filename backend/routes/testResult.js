@@ -55,7 +55,7 @@ router.get('/:id', authenticate, async (req, res) => {
             {
               model: Hospital,
               as: 'hospital',
-              attributes: ['id', 'name', 'address']
+              attributes: ['id', 'name', "province","district","sector","cell","village","street","latitude","longitude"]
             }
           ]
         },

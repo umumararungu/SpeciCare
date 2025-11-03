@@ -1,19 +1,20 @@
-const express = require('express');
-const cors = require('cors');
-const bodyParser = require('body-parser');
-require('dotenv').config();
+const express = require("express");
+const cors = require("cors");
+const bodyParser = require("body-parser");
+const cookieParser = require("cookie-parser");
+
+require("dotenv").config();
 
 // Connect PostgreSQL
-const { connectDB } = require('./config/database');
+const { connectDB } = require("./config/database");
 
 // Import middleware
-const { 
-    securityHeaders, 
-    authLimiter, 
-    apiLimiter,
-    handleValidationErrors 
-} = require('./middleware/validation');
-
+const {
+  securityHeaders,
+  authLimiter,
+  apiLimiter,
+  handleValidationErrors,
+} = require("./middleware/validation");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -22,77 +23,79 @@ const PORT = process.env.PORT || 5000;
 
 // Security middleware
 app.use(securityHeaders);
-app.use(cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-    credentials: true
-}));
-app.use(bodyParser.json({ limit: '10mb' }));
-app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
+// app.use(cors({
+//     origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+//     credentials: true
+// }));
+app.use(cookieParser());
+app.use(bodyParser.json({ limit: "10mb" }));
+app.use(bodyParser.urlencoded({ extended: true, limit: "10mb" }));
 
 // Rate limiting
-app.use('/api/auth/', authLimiter);
-app.use('/api/', apiLimiter);
+app.use("/api/auth/", authLimiter);
+app.use("/api/", apiLimiter);
 
 // Health check
-app.get('/api/health', (req, res) =>
-    res.send('Server is running'));
+app.get("/api/health", (req, res) => res.send("Server is running"));
 
 // CORS configuration
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true, // Important: allow cookies
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
-}));
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    credentials: true, // Important: allow cookies
+    //   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    //   allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
+  })
+);
 
-app.options('*',cors);
-
+app.options("*", cors);
 
 // API routes
-app.use('/api/appointments', require('./routes/appointment'));
-app.use('/api/medical-test', require('./routes/medicalTest'));
-app.use('/api/users', require('./routes/users'));
-app.use('/api/test-results', require('./routes/testResult'));
-app.use('/api/admin', require('./routes/admin'));
+app.use("/api/appointments", require("./routes/appointment"));
+app.use("/api/medical-test", require("./routes/medicalTest"));
+app.use("/api/users", require("./routes/users"));
+app.use("/api/test-results", require("./routes/testResult"));
+app.use("/api/admin", require("./routes/admin"));
+app.use("/api/hospitals", require("./routes/hospital"));
 
 // 404 handler
-app.use('*', (req, res) => {
-    res.status(404).json({
-        success: false,
-        message: 'API endpoint not found'
-    });
+app.use("*", (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: "API endpoint not found",
+  });
 });
 
 // Global error handler
 app.use((error, req, res, next) => {
-    console.error('Global error handler:', error);
+  console.error("Global error handler:", error);
 
-    if (process.env.NODE_ENV === 'production') {
-        return res.status(500).json({
-            success: false,
-            message: 'Internal server error'
-        });
-    }
-
-    res.status(500).json({
-        success: false,
-        message: error.message,
-        stack: error.stack
+  if (process.env.NODE_ENV === "production") {
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
     });
+  }
+
+  res.status(500).json({
+    success: false,
+    message: error.message,
+    stack: error.stack,
+  });
 });
 
 // Start server
 app.listen(PORT, () => {
-    console.log(" SpeciCare server running on port ${PORT}");
+  console.log(" SpeciCare server running on port ${PORT}");
 });
 
-require('./models/index');
+require("./models/index");
 
-const { sequelize } = require('./models')
+const { sequelize } = require("./models");
 
-
-sequelize.sync().then(()=>console.log('created')).catch(err => console.error(err));
-
-
+sequelize
+  .sync()
+  .then(() => console.log("created"))
+  .catch((err) => console.error(err));
 
 module.exports = app;

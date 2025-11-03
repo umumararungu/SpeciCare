@@ -1,38 +1,37 @@
-const { Appointment, MedicalTest, User, Hospital } = require('../models');
+const { Appointment, MedicalTest, User, Hospital } = require("../models");
 
 exports.getMyAppointments = async (req, res) => {
   try {
     const appointments = await Appointment.findAll({
-      where: { patientId: req.user.id },
+      where: { patient_id: req.user.id },
       include: [
-        { model: MedicalTest, as: 'test' },
-        { model: Hospital, as: 'hospital' },
-        { model: User, as: 'doctor', attributes: ['id', 'name', 'email'] }
-      ]
+        { model: MedicalTest, as: "medicalTest" },
+        { model: Hospital, as: "hospital" },
+        { model: User, as: "user", attributes: ["id", "name", "email"] },
+      ],
     });
     res.json(appointments);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
 exports.createAppointment = async (req, res) => {
   try {
-    const { hospitalId, doctorId, testId, date, time, reason } = req.body;
+    const { hospital_id, patient_id, test_id, appointmentDate, time_slot } =
+      req.body;
     const newAppointment = await Appointment.create({
-      patientId: req.user.id,
-      hospitalId,
-      doctorId,
-      testId,
-      date,
-      time,
-      reason,
-      status: 'pending'
+      patient_id: req.user.id,
+      hospital_id: hospital_id,
+      test_id,
+      appintment_date: appointmentDate,
+      time_slot,
+      status: "pending",
     });
     res.status(201).json(newAppointment);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 };

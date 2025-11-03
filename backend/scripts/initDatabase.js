@@ -65,32 +65,7 @@ async function createTables(client) {
         )
     `);
 
-    // Medical tests table
-    await client.query(`
-        CREATE TABLE IF NOT EXISTS medical_tests (
-            id SERIAL PRIMARY KEY,
-            name VARCHAR(200) NOT NULL,
-            description TEXT NOT NULL,
-            category VARCHAR(50) NOT NULL CHECK (category IN (
-                'radiology', 'laboratory', 'cardiology', 'neurology', 
-                'pathology', 'endoscopy', 'pulmonology', 'other'
-            )),
-            subcategory VARCHAR(100),
-            price INTEGER NOT NULL CHECK (price >= 0),
-            currency VARCHAR(10) DEFAULT 'RWF',
-            duration VARCHAR(50) NOT NULL,
-            preparation_instructions TEXT,
-            is_insurance_covered BOOLEAN DEFAULT TRUE,
-            insurance_co_pay INTEGER DEFAULT 0 CHECK (insurance_co_pay >= 0),
-            is_available BOOLEAN DEFAULT TRUE,
-            requirements JSONB,
-            tags JSONB,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    `);
-
-    // Hospitals table
+        // Hospitals table
     await client.query(`
         CREATE TABLE IF NOT EXISTS hospitals (
             id SERIAL PRIMARY KEY,
@@ -121,6 +96,34 @@ async function createTables(client) {
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     `);
+
+    // Medical tests table
+    await client.query(`
+        CREATE TABLE IF NOT EXISTS medical_tests (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(200) NOT NULL,
+            description TEXT NOT NULL,
+            category VARCHAR(50) NOT NULL CHECK (category IN (
+                'radiology', 'laboratory', 'cardiology', 'neurology', 
+                'pathology', 'endoscopy', 'pulmonology', 'other'
+            )),
+            subcategory VARCHAR(100),
+            hospital_id INTEGER NOT NULL REFERENCES hospitals(id),
+            price INTEGER NOT NULL CHECK (price >= 0),
+            currency VARCHAR(10) DEFAULT 'RWF',
+            duration VARCHAR(50) NOT NULL,
+            preparation_instructions TEXT,
+            is_insurance_covered BOOLEAN DEFAULT TRUE,
+            insurance_co_pay INTEGER DEFAULT 0 CHECK (insurance_co_pay >= 0),
+            is_available BOOLEAN DEFAULT TRUE,
+            requirements JSONB,
+            tags JSONB,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
+
 
     // Appointments table
     await client.query(`
@@ -197,7 +200,7 @@ async function createTables(client) {
             test_id INTEGER NOT NULL REFERENCES medical_tests(id),
             patient_id INTEGER NOT NULL REFERENCES users(id),
             hospital_id INTEGER NOT NULL REFERENCES hospitals(id),
-            result_type VARCHAR(20) NOT NULL CHECK (result_type IN ('numeric', 'text', 'image', 'file', 'mixed')),
+            result_type VARCHAR (255) NOT NULL CHECK (result_type IN ('numeric', 'text', 'image', 'file', 'mixed')),
             files JSONB,
             numeric_results JSONB,
             text_findings TEXT,
@@ -280,23 +283,6 @@ async function insertSampleData(client) {
     if (parseInt(testCount.rows[0].count) === 0) {
         console.log('Inserting sample data...');
 
-        // Insert sample medical tests
-        const sampleTests = [
-            ['MRI Scan', 'Magnetic Resonance Imaging for detailed internal body scans', 'radiology', 85000, '45 minutes', 'No food or drink 4 hours before scan', true, 8500],
-            ['CT Scan', 'Computed Tomography scan for cross-sectional body images', 'radiology', 75000, '30 minutes', 'No metal objects, fasting may be required', true, 7500],
-            ['Blood Test (Full Panel)', 'Complete blood count and comprehensive metabolic panel', 'laboratory', 15000, '15 minutes', 'Fasting for 8-12 hours required', true, 1500],
-            ['X-Ray Chest', 'Chest X-ray for lung and heart examination', 'radiology', 20000, '20 minutes', 'No special preparation needed', true, 2000],
-            ['Ultrasound Abdomen', 'Abdominal ultrasound for organ examination', 'radiology', 35000, '30 minutes', 'Fasting for 6-8 hours required', true, 3500]
-        ];
-
-        for (const test of sampleTests) {
-            await client.query(
-                `INSERT INTO medical_tests 
-                (name, description, category, price, duration, preparation_instructions, is_insurance_covered, insurance_co_pay) 
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-                test
-            );
-        }
 
         // Insert sample hospitals
         const sampleHospitals = [
@@ -314,6 +300,26 @@ async function insertSampleData(client) {
                 hospital
             );
         }
+
+        // Insert sample medical tests
+        const sampleTests = [
+            ['MRI Scan', 'Magnetic Resonance Imaging for detailed internal body scans', 'radiology', 1, 85000, '45 minutes', 'No food or drink 4 hours before scan', true, 8500],
+            ['CT Scan', 'Computed Tomography scan for cross-sectional body images', 'radiology', 2, 75000, '30 minutes', 'No metal objects, fasting may be required', true, 7500],
+            ['Blood Test (Full Panel)', 'Complete blood count and comprehensive metabolic panel', 3, 'laboratory', 15000, '15 minutes', 'Fasting for 8-12 hours required', true, 1500],
+            ['X-Ray Chest', 'Chest X-ray for lung and heart examination', 'radiology', 20000, 4, '20 minutes', 'No special preparation needed', true, 2000],
+            ['Ultrasound Abdomen', 'Abdominal ultrasound for organ examination', 'radiology', 2, 35000, '30 minutes', 'Fasting for 6-8 hours required', true, 3500]
+        ];
+
+        for (const test of sampleTests) {
+            await client.query(
+                `INSERT INTO medical_tests 
+                (name, description, category, hospital_id, price, duration, preparation_instructions, is_insurance_covered, insurance_co_pay) 
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+                test
+            );
+        }
+
+
 
         console.log('  Sample data inserted successfully');
     } else {
