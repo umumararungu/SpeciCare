@@ -14,6 +14,7 @@ SpeciCare is a web platform that connects patients in Nyamata with specialized m
 - Digital test results delivery
 - Insurance integration
 
+
 ## Quick Setup
 
 ### Prerequisites
