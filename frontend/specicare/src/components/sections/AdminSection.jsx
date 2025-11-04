@@ -337,7 +337,9 @@ const AdminSection = () => {
                 </p>
                 <p>
                   <strong>Date:</strong>{" "}
-                  {new Date(booking.date).toLocaleDateString()}
+                  {booking?.appointment_date
+                    ? new Date(booking.appointment_date).toLocaleDateString()
+                    : booking?.appointment_date || "N/A"}
                 </p>
                 <p>
                   <strong>Price:</strong>{" "}
