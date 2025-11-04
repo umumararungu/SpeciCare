@@ -60,11 +60,11 @@ return Notification = sequelize.define('Notification', {
   expires_at: {
     type: DataTypes.DATE,
   },
-  createdAt: {
+  created_at: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW,
   },
-  updatedAt: {
+  updated_at: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW,
   },

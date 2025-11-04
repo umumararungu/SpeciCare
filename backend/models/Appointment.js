@@ -1,11 +1,8 @@
-// models/Appointment.js - CORRECTED VERSION
-const { DataTypes } = require('sequelize');
-
 module.exports = (sequelize, DataTypes) => {
-  const Appointment = sequelize.define('appointment', {
+  const Appointment = sequelize.define('Appointment', {
     id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
       primaryKey: true,
     },
     patient_id: {
@@ -23,42 +20,40 @@ module.exports = (sequelize, DataTypes) => {
     appointment_date: {
       type: DataTypes.DATEONLY,
       allowNull: false,
-      field:'appointment_date',
+      field: 'appointment_date',
     },
     time_slot: {
       type: DataTypes.STRING(20),
       allowNull: false,
-      field:'time_slot',
+      field: 'time_slot',
     },
-    // reason: {
-    //   type: DataTypes.STRING(500),
-    // },
-    // type: {
-    //   type: DataTypes.ENUM('consultation', 'follow-up', 'lab-test', 'emergency'),
-    //   defaultValue: 'consultation',
-    // },
     status: {
       type: DataTypes.ENUM('pending', 'confirmed', 'cancelled', 'completed', 'rescheduled'),
       defaultValue: 'pending',
     },
-    // notes: {
-    //   type: DataTypes.JSONB,
-    //   defaultValue: {},
-    // },
-    reminder_sms_sent_at: {
-      type: DataTypes.DATE,
+    reference: {
+      type: DataTypes.STRING(50),
+      allowNull: false,
+      unique: true,
+      validate: {
+        notEmpty: true,
+      },
     },
-    payment_method: {
-      type: DataTypes.STRING,
-    },
-    previous_tests: {
-      type: DataTypes.JSONB,
-      defaultValue: {},
-    }
+    // Note: Do NOT declare created_at/updated_at here when using Sequelize timestamps.
+    // Let Sequelize manage them (with underscored: true they map to created_at/updated_at).
   }, {
     tableName: 'appointments',
-    timestamps: true, // Let Sequelize handle createdAt/updatedAt
+    timestamps: true,
     underscored: true,
+    indexes: [
+      {
+        unique: true,
+        fields: ['reference'],
+      },
+      { fields: ['patient_id'] },
+      { fields: ['hospital_id'] },
+      { fields: ['appointment_date', 'status'] },
+    ],
   });
 
   return Appointment;

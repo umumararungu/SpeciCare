@@ -78,9 +78,9 @@ const BookingModal = () => {
 
     const completeBookingData = {
       ...bookingData,
-      testId: currentTest.id,
+      test_id: currentTest.id,
       testName: currentTest.name,
-      hospitalId: currentTest.hospital_id,
+      hospital_id: currentTest.hospital_id,
       price: currentTest.price,
     };
 

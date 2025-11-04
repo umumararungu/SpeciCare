@@ -3,11 +3,11 @@ const sequelize = require('../config/database');
 const User = require('./User');
 module.exports = (sequelize, DataTypes) =>{
 return TestResult = sequelize.define('testResult', {
-  id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
-    primaryKey: true,
-  },
+    id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
+    },
   appointmentId: {
     type: DataTypes.UUID,
     allowNull: false,

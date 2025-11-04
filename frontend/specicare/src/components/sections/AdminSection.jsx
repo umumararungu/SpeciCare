@@ -14,6 +14,7 @@ const AdminSection = () => {
     deleteMedicalTest,
     deleteUser,
     updateAppointmentStatus,
+    adminStats,
   } = useApp();
   const [activeTab, setActiveTab] = useState("overview");
   const [adminActivities, setAdminActivities] = useState([]);
@@ -34,7 +35,16 @@ const AdminSection = () => {
   const totalUsers = allUsers.length;
   const totalBookings = appointments.length;
   const totalTests = medicalTests.length;
-  const totalRevenue = appointments.reduce((sum, apt) => sum + apt.price, 0);
+  // Prefer adminStats.totalRevenue when available (server-calculated). Fallback to summing
+  // appointment-level amounts or the included medicalTest price.
+  const totalRevenue =
+    (typeof adminStats !== "undefined" && adminStats && adminStats.totalRevenue) ||
+    appointments.reduce((sum, apt) => {
+      const priceFromTest = apt?.medicalTest?.price;
+      const totalAmount = apt?.total_amount;
+      const price = Number(totalAmount ?? priceFromTest ?? 0);
+      return sum + (Number.isFinite(price) ? price : 0);
+    }, 0);
 
   const filteredBookings =
     bookingStatusFilter === "all"
@@ -48,7 +58,7 @@ const AdminSection = () => {
   const [newTestData, setNewTestData] = useState({
     name: "",
     category: "",
-    hospitalId: "",
+    hospital_id: "",
     price: "",
     duration: "",
     description: "",
@@ -63,7 +73,7 @@ const AdminSection = () => {
       ...newTestData,
       id: Date.now(),
       price: parseInt(newTestData.price),
-      hospital_id: newTestData.hospitalId,
+      hospital_id: newTestData.hospital_id,
     };
     createMedicalTest(newTest);
 
@@ -109,14 +119,16 @@ const AdminSection = () => {
     street:"",
     latitude:"",
     longitude:"",
+    departments: [],
     facilities: [],
     registration_number: "",
     is_active: true,
   });
 
   useEffect(() => {
-    setDeptInput(newHospitalData.departments.join(", "));
-    setFacilitiesInput(newHospitalData.facilities.join(", "));
+    // Guard against undefined by defaulting to an empty array
+    setDeptInput((newHospitalData.departments || []).join(", "));
+    setFacilitiesInput((newHospitalData.facilities || []).join(", "));
   }, [newHospitalData]);
 
   const handleAddHospital = (e) => {
@@ -146,15 +158,16 @@ const AdminSection = () => {
       street:"",
       latitude:"",
       longitude:"",
+      departments: [],
       facilities: [],
       registration_number: "",
       is_active: true,
     });
   };
 
-  const handleDeleteHospital = (hospitalId) => {
+  const handleDeleteHospital = (hospital_id) => {
     if (window.confirm("Are you sure you want to delete this hospital?")) {
-      deleteHospital(hospitalId);
+      deleteHospital(hospital_id);
       showNotification("Hospital deleted successfully!", "success");
     }
   };
@@ -574,11 +587,11 @@ const AdminSection = () => {
                 <select
                   id="testHospital"
                   required
-                  value={newTestData.hospitalId || ""}
+                  value={newTestData.hospital_id || ""}
                   onChange={(e) =>
                     setNewTestData({
                       ...newTestData,
-                      hospitalId: e.target.value,
+                      hospital_id: e.target.value,
                     })
                   }
                 >

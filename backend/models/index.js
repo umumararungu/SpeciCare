@@ -22,32 +22,32 @@ const TestResult = require('./TestResults')(sequelize, DataTypes);
 // ------------------------
 
 // Users
-User.hasMany(Appointment, { foreignKey: 'patientId' });
-Appointment.belongsTo(User, { foreignKey: 'patientId' });
+User.hasMany(Appointment, { foreignKey: 'patient_id' });
+Appointment.belongsTo(User, { foreignKey: 'patient_id' });
 
-User.hasMany(TestResult, { foreignKey: 'patientId' });
-TestResult.belongsTo(User, { foreignKey: 'patientId' });
+User.hasMany(TestResult, { foreignKey: 'patient_id' });
+TestResult.belongsTo(User, { foreignKey: 'patient_id' });
 
-User.hasMany(Notification, { foreignKey: 'patientId' });
-Notification.belongsTo(User, { foreignKey: 'patientId' });
+User.hasMany(Notification, { foreignKey: 'patient_id' });
+Notification.belongsTo(User, { foreignKey: 'patient_id' });
 
 // Hospitals
-Hospital.hasMany(Appointment, { foreignKey: 'hospitalId' });
-Appointment.belongsTo(Hospital, { foreignKey: 'hospitalId' });
+Hospital.hasMany(Appointment, { foreignKey: 'hospital_id' });
+Appointment.belongsTo(Hospital, { foreignKey: 'hospital_id' });
 
-Hospital.hasMany(TestResult, { foreignKey: 'hospitalId' });
-TestResult.belongsTo(Hospital, { foreignKey: 'hospitalId' });
+Hospital.hasMany(TestResult, { foreignKey: 'hospital_id' });
+TestResult.belongsTo(Hospital, { foreignKey: 'hospital_id' });
 
 // MedicalTests
-MedicalTest.hasMany(Appointment, { foreignKey: 'testId' });
-Appointment.belongsTo(MedicalTest, { foreignKey: 'testId' });
+MedicalTest.hasMany(Appointment, { foreignKey: 'test_id' });
+Appointment.belongsTo(MedicalTest, { foreignKey: 'test_id' });
 
-MedicalTest.hasMany(TestResult, { foreignKey: 'testId' });
-TestResult.belongsTo(MedicalTest, { foreignKey: 'testId' });
+MedicalTest.hasMany(TestResult, { foreignKey: 'test_id' });
+TestResult.belongsTo(MedicalTest, { foreignKey: 'test_id' });
 
 // Appointments ↔ TestResults
-Appointment.hasMany(TestResult, { foreignKey: 'appointmentId' });
-TestResult.belongsTo(Appointment, { foreignKey: 'appointmentId' });
+Appointment.hasMany(TestResult, { foreignKey: 'appointment_id' });
+TestResult.belongsTo(Appointment, { foreignKey: 'appointment_id' });
 
 
 // Export models & sequelize

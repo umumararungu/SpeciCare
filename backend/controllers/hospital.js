@@ -93,14 +93,14 @@ exports.createHospital = async (req, res) => {
 exports.updateHospital = async (req, res) => {
   try {
     const { id } = req.params;
-    const updateData = req.body;
+    const updated_ata = req.body;
 
     const hospital = await Hospital.findByPk(id);
     if (!hospital) {
       return res.status(404).json({ message: "Hospital not found" });
     }
 
-    await hospital.update(updateData);
+    await hospital.update(updated_ata);
 
     res.json({
       success: true,

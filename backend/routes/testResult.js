@@ -13,7 +13,7 @@ router.get('/my', authenticate, async (req, res) => {
         {
           model: Appointment,
           as: 'appointment',
-          attributes: ['id', 'date', 'time', 'type']
+          attributes: ['id', 'appointment_date', 'time_slot']
         },
         {
           model: Hospital,

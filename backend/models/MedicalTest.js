@@ -3,11 +3,11 @@ const sequelize = require('../config/database'); // from your psql connect file
 
 module.exports = (sequelize, DataTypes) =>{
 return MedicalTest = sequelize.define('medicalTest', {
-  id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
-    primaryKey: true,
-  },
+    id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
+    },
   name: {
     type: DataTypes.STRING(200),
     allowNull: false,
@@ -70,11 +70,11 @@ return MedicalTest = sequelize.define('medicalTest', {
     type: DataTypes.JSONB, // store array of strings
     defaultValue: [],
   },
-  createdAt: {
+  created_at: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW,
   },
-  updatedAt: {
+  updated_at: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW,
   },

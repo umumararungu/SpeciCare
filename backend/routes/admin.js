@@ -261,7 +261,7 @@ router.put(
   async (req, res) => {
     try {
       const { id } = req.params;
-      const updateData = req.body;
+      const updated_ata = req.body;
 
       const test = await MedicalTest.findByPk(id);
       if (!test) {
@@ -271,7 +271,7 @@ router.put(
         });
       }
 
-      await test.update(updateData);
+      await test.update(updated_ata);
 
       res.json({
         success: true,
