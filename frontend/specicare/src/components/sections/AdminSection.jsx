@@ -15,6 +15,8 @@ const AdminSection = () => {
     deleteUser,
     updateAppointmentStatus,
     adminStats,
+    allAppointments,
+    currentUser,
   } = useApp();
   const [activeTab, setActiveTab] = useState("overview");
   const [adminActivities, setAdminActivities] = useState([]);
@@ -33,7 +35,7 @@ const AdminSection = () => {
 
   // Admin stats
   const totalUsers = allUsers.length;
-  const totalBookings = appointments.length;
+  const totalBookings = (currentUser && currentUser.role === 'admin') ? allAppointments.length : appointments.length;
   const totalTests = medicalTests.length;
   // Prefer adminStats.totalRevenue when available (server-calculated). Fallback to summing
   // appointment-level amounts or the included medicalTest price.
@@ -46,10 +48,12 @@ const AdminSection = () => {
       return sum + (Number.isFinite(price) ? price : 0);
     }, 0);
 
+  const bookingsSource = (currentUser && currentUser.role === 'admin') ? allAppointments : appointments;
+
   const filteredBookings =
     bookingStatusFilter === "all"
-      ? appointments
-      : appointments.filter((apt) => apt.status === bookingStatusFilter);
+      ? bookingsSource
+      : bookingsSource.filter((apt) => apt.status === bookingStatusFilter);
 
   const recentActivities = [...adminActivities].reverse().slice(0, 5);
 
@@ -327,13 +331,12 @@ const AdminSection = () => {
           filteredBookings.map((booking) => (
             <div key={booking.id} className="booking-item">
               <div className="booking-info">
-                <h4>{booking.testName}</h4>
+                <h4>{booking.medicalTest?.name || booking.testName || "Test"}</h4>
                 <p>
-                  <strong>Patient:</strong> {booking.patientName} •{" "}
-                  {booking.patientPhone}
+                  <strong>Patient:</strong> {(booking.user && booking.user.name) || booking.patient_name || booking.patientName || "Unknown"} • { (booking.user && booking.user.phone) || booking.patient_phone || booking.patientPhone || "N/A" }
                 </p>
                 <p>
-                  <strong>Hospital:</strong> {booking.hospital.name}
+                  <strong>Hospital:</strong> {booking.hospital?.name || booking.hospitalName || "N/A"}
                 </p>
                 <p>
                   <strong>Date:</strong>{" "}
@@ -343,7 +346,7 @@ const AdminSection = () => {
                 </p>
                 <p>
                   <strong>Price:</strong>{" "}
-                  {booking.medicalTest.price.toLocaleString()} RWF
+                  {(booking.medicalTest?.price ?? booking.price ?? 0).toLocaleString()} RWF
                 </p>
                 <span className={`status ${booking.status}`}>
                   {booking.status}

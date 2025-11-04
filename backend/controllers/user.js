@@ -1,6 +1,7 @@
 const { User } = require('../models');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const { normalizePhone } = require('../utils/phone');
 
 exports.register = async (req, res) => {
   try {
@@ -8,16 +9,22 @@ exports.register = async (req, res) => {
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) return res.status(400).json({ message: 'Email already registered' });
 
+    // Normalize phone to E.164 and reject if invalid
+    const normalizedPhone = normalizePhone(phone);
+    if (phone && !normalizedPhone) {
+      return res.status(400).json({ message: 'Invalid phone number' });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = await User.create({
       name,
       email,
       password: hashedPassword,
-      phone,
+      phone: normalizedPhone || null,
       gender,
       dateOfBirth,
       role: role || 'patient',
-      isActive: true
+      isActive: true,
     });
 
     const token = jwt.sign({ id: newUser.id, role: newUser.role }, process.env.JWT_SECRET, { expiresIn: '7d' });

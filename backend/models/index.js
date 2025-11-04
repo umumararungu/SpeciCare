@@ -22,8 +22,8 @@ const TestResult = require('./TestResults')(sequelize, DataTypes);
 // ------------------------
 
 // Users
-User.hasMany(Appointment, { foreignKey: 'patient_id' });
-Appointment.belongsTo(User, { foreignKey: 'patient_id' });
+User.hasMany(Appointment, { foreignKey: 'patient_id', as: 'appointments' });
+Appointment.belongsTo(User, { foreignKey: 'patient_id', as: 'user' });
 
 User.hasMany(TestResult, { foreignKey: 'patient_id' });
 TestResult.belongsTo(User, { foreignKey: 'patient_id' });
@@ -32,15 +32,15 @@ User.hasMany(Notification, { foreignKey: 'patient_id' });
 Notification.belongsTo(User, { foreignKey: 'patient_id' });
 
 // Hospitals
-Hospital.hasMany(Appointment, { foreignKey: 'hospital_id' });
-Appointment.belongsTo(Hospital, { foreignKey: 'hospital_id' });
+Hospital.hasMany(Appointment, { foreignKey: 'hospital_id', as: 'appointments' });
+Appointment.belongsTo(Hospital, { foreignKey: 'hospital_id', as: 'hospital' });
 
 Hospital.hasMany(TestResult, { foreignKey: 'hospital_id' });
 TestResult.belongsTo(Hospital, { foreignKey: 'hospital_id' });
 
 // MedicalTests
-MedicalTest.hasMany(Appointment, { foreignKey: 'test_id' });
-Appointment.belongsTo(MedicalTest, { foreignKey: 'test_id' });
+MedicalTest.hasMany(Appointment, { foreignKey: 'test_id', as: 'appointments' });
+Appointment.belongsTo(MedicalTest, { foreignKey: 'test_id', as: 'medicalTest' });
 
 MedicalTest.hasMany(TestResult, { foreignKey: 'test_id' });
 TestResult.belongsTo(MedicalTest, { foreignKey: 'test_id' });

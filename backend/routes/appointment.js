@@ -61,6 +61,10 @@ router.post("/", authenticate, async (req, res) => {
     // Generate unique reference
     const reference = await generateAppointmentReference();
 
+    // Normalize patient phone for storage
+    const { normalizePhone } = require('../utils/phone');
+    const normalizedPatientPhone = normalizePhone(req.user.phone) || req.user.phone;
+
     // Create appointment with reference
     const appointment = await Appointment.create({
       reference, // Add reference field
@@ -75,7 +79,7 @@ router.post("/", authenticate, async (req, res) => {
       insurance_covered: 0,
       patient_share: 0,
       patient_name: req.user.name, // Assuming user has name field
-      patient_phone: req.user.phone, // Assuming user has phone field
+      patient_phone: normalizedPatientPhone, // normalized
     }, { transaction });
 
     // Fetch appointment with related data

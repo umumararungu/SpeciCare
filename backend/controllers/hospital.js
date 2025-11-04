@@ -58,10 +58,13 @@ exports.createHospital = async (req, res) => {
       is_active = true,
     } = req.body;
 
+    const { normalizePhone } = require('../utils/phone');
+    const normalizedPhone = normalizePhone(phone);
+
     const newHospital = await Hospital.create({
       name,
       email,
-      phone,
+      phone: normalizedPhone || phone,
       province,
       district,
       sector,
@@ -98,6 +101,17 @@ exports.updateHospital = async (req, res) => {
     const hospital = await Hospital.findByPk(id);
     if (!hospital) {
       return res.status(404).json({ message: "Hospital not found" });
+    }
+
+    // Normalize phone numbers if present
+    const { normalizePhone } = require('../utils/phone');
+    if (updated_ata.phone) {
+      const normalized = normalizePhone(updated_ata.phone);
+      updated_ata.phone = normalized || updated_ata.phone;
+    }
+    if (updated_ata.emergency_phone) {
+      const normalized = normalizePhone(updated_ata.emergency_phone);
+      updated_ata.emergency_phone = normalized || updated_ata.emergency_phone;
     }
 
     await hospital.update(updated_ata);

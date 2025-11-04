@@ -530,7 +530,8 @@ export const AppProvider = ({ children }) => {
     notification,
     errors,
     adminStats,
-    allUsers,
+  allUsers,
+  allAppointments,
     isAdmin,
 
     // Setters

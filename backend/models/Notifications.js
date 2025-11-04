@@ -1,12 +1,14 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 const User = require('./User');
-module.exports = (sequelize, DataTypes) =>{
-return Notification = sequelize.define('Notification', {
-  patientId: {
-    type: DataTypes.UUID,
-    allowNull: false,
-  },
+module.exports = (sequelize, DataTypes) => {
+  return Notification = sequelize.define('Notification', {
+    // Keep attribute name `patientId` in JS but map to DB column `patient_id`
+    patientId: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      field: 'patient_id',
+    },
   type: {
     type: DataTypes.ENUM(
       'appointment_confirmation',
@@ -29,23 +31,18 @@ return Notification = sequelize.define('Notification', {
     type: DataTypes.STRING(1000),
     allowNull: false,
   },
-  data: {
-    type: DataTypes.JSONB, // replaces nested Mongoose refs
-    defaultValue: {},
-  },
+    data: {
+      type: DataTypes.JSONB,
+      defaultValue: {},
+    },
   channels: {
     type: DataTypes.JSONB, // e.g. ["sms", "email", "push"]
     defaultValue: [],
   },
-  delivery_status: {
-    type: DataTypes.JSONB, // nested structure for each channel
-    defaultValue: {
-      sms: {},
-      email: {},
-      push: {},
-      in_app: {},
+    delivery_status: {
+      type: DataTypes.JSONB,
+      defaultValue: {},
     },
-  },
   read: {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
@@ -60,19 +57,10 @@ return Notification = sequelize.define('Notification', {
   expires_at: {
     type: DataTypes.DATE,
   },
-  created_at: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW,
-  },
-  updated_at: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW,
-  },
-}, {
-  tableName: 'notifications',
-  timestamps: true,
-  underscored: true,
-});
-}
+  }, {
+    tableName: 'notifications',
+    timestamps: true,
+    underscored: true,
+  });
+};
 
-// module.exports = Notification;

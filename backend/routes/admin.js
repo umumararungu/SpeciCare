@@ -5,7 +5,9 @@ const {
   MedicalTest,
   TestResult,
   Hospital,
+  Notification,
 } = require("../models");
+const { sendSMS } = require("../services/sms");
 const hospitalController = require("../controllers/hospital");
 const { authenticate } = require("../middleware/auth");
 const router = express.Router();
@@ -163,6 +165,60 @@ router.put(
       }
 
       await appointment.update({ status });
+
+      // If appointment is confirmed, send an SMS to the patient and create an in-app notification
+      if (status === "confirmed") {
+        try {
+          const user = await User.findByPk(appointment.patient_id);
+          const medicalTest = await MedicalTest.findByPk(appointment.test_id);
+          const hospitalObj = await Hospital.findByPk(appointment.hospital_id);
+
+          const apptPayload = {
+            ...appointment.get ? appointment.get({ plain: true }) : appointment,
+            medicalTest: medicalTest ? medicalTest.get({ plain: true }) : null,
+            hospital: hospitalObj ? hospitalObj.get({ plain: true }) : null,
+          };
+          // Send SMS if phone exists
+          let smsResult = { success: false };
+          try {
+            if (user && user.phone) {
+              const { normalizePhone } = require('../utils/phone');
+              const to = normalizePhone(user.phone);
+              if (to) {
+                smsResult = await sendSMS(to, apptPayload, {
+                patientName: user.name,
+                testName: medicalTest?.name,
+                hospitalName: hospitalObj?.name,
+                date: appointment.appointment_date,
+                time: appointment.time_slot,
+                });
+              } else {
+                console.warn('User phone number could not be normalized, skipping SMS:', user.phone);
+              }
+            }
+          } catch (smsErr) {
+            console.error('SMS send error:', smsErr);
+            smsResult = { success: false, error: smsErr };
+          }
+
+          // Record notification in database
+          if (Notification) {
+            await Notification.create({
+              patientId: user.id,
+              type: 'appointment_confirmation',
+              title: 'Appointment confirmed',
+              message: `Your appointment ${appointment.reference || appointment.id} has been confirmed for ${appointment.appointment_date}`,
+              data: { appointmentId: appointment.id },
+              channels: ['sms', 'in_app'],
+              delivery_status: { sms: { sent: !!smsResult.success, info: smsResult.sid || null } },
+              priority: 'high',
+            });
+          }
+        } catch (err) {
+          console.error('Error sending confirmation SMS or creating notification:', err);
+          // don't fail the whole request if email/notification fails
+        }
+      }
 
       res.json({
         success: true,
