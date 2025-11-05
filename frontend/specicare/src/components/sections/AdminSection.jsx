@@ -20,6 +20,8 @@ const AdminSection = () => {
     adminStats,
     allAppointments,
     currentUser,
+    updateMedicalTest,
+    updateHospital,
   } = useApp();
   const [activeTab, setActiveTab] = useState("overview");
   const [adminActivities, setAdminActivities] = useState([]);
@@ -72,6 +74,7 @@ const AdminSection = () => {
     available: true,
     insuranceCovered: true,
   });
+  const [editingTest, setEditingTest] = useState(null);
 
   const handleAddTest = (e) => {
     e.preventDefault();
@@ -82,7 +85,21 @@ const AdminSection = () => {
       price: parseInt(newTestData.price),
       hospital_id: newTestData.hospital_id,
     };
-    createMedicalTest(newTest);
+    if (editingTest) {
+      // update existing test
+      updateMedicalTest(editingTest.id, {
+        name: newTestData.name,
+        description: newTestData.description,
+        category: newTestData.category,
+        hospital_id: newTestData.hospital_id,
+        price: parseFloat(newTestData.price) || 0,
+        duration: newTestData.duration,
+        is_available: newTestData.available,
+      });
+      setEditingTest(null);
+    } else {
+      createMedicalTest(newTest);
+    }
 
     // Log activity
     const activity = {
@@ -130,8 +147,10 @@ const AdminSection = () => {
     departments: [],
     facilities: [],
     registration_number: "",
+    accreditation: { body: "", status: "" },
     is_active: true,
   });
+  const [editingHospital, setEditingHospital] = useState(null);
 
   useEffect(() => {
     // Guard against undefined by defaulting to an empty array
@@ -146,7 +165,12 @@ const AdminSection = () => {
       ...newHospitalData,
     };
 
-    createHospital(newHospital);
+    if (editingHospital) {
+      updateHospital(editingHospital.id, newHospitalData);
+      setEditingHospital(null);
+    } else {
+      createHospital(newHospital);
+    }
 
     showNotification(
       `Hospital "${newHospital.name}" added successfully!`,
@@ -169,6 +193,7 @@ const AdminSection = () => {
       departments: [],
       facilities: [],
       registration_number: "",
+      accreditation: { body: "", status: "" },
       is_active: true,
     });
   };
@@ -472,9 +497,7 @@ const AdminSection = () => {
                 <p>
                   <strong>Hospital:</strong>{" "}
                   {
-                    hospitals.find(
-                      (hospital) => hospital.id === test.hospital_id
-                    ).name
+                    ((hospitals || []).find((hospital) => hospital.id === test.hospital_id) || {}).name || 'N/A'
                   }
                 </p>
                 <p>
@@ -492,6 +515,25 @@ const AdminSection = () => {
                 </span>
               </div>
               <div className="test-actions">
+                <button
+                  className="secondary-btn"
+                  onClick={() => {
+                    // open edit modal prefilled
+                    setEditingTest(test);
+                    setNewTestData({
+                      name: test.name || "",
+                      category: test.category || "",
+                      hospital_id: test.hospital_id || "",
+                      price: test.price || "",
+                      duration: test.duration || "",
+                      description: test.description || "",
+                      available: test.is_available ?? true,
+                    });
+                    setShowAddTestModal(true);
+                  }}
+                >
+                  <i className="fas fa-edit"></i> Edit
+                </button>
                 <button
                   className="danger-btn"
                   onClick={() => deleteTest(test.id)}
@@ -539,6 +581,33 @@ const AdminSection = () => {
                 </p>
               </div>
               <div className="hospital-actions">
+                <button
+                  className="secondary-btn"
+                  onClick={() => {
+                    setEditingHospital(hospital);
+                    setNewHospitalData({
+                      name: hospital.name || "",
+                      email: hospital.email || "",
+                      phone: hospital.phone || "",
+                      province: hospital.province || "",
+                      district: hospital.district || "",
+                      sector: hospital.sector || "",
+                      cell: hospital.cell || "",
+                      village: hospital.village || "",
+                      street: hospital.street || "",
+                      latitude: hospital.latitude || "",
+                      longitude: hospital.longitude || "",
+                      departments: hospital.departments || [],
+                      facilities: hospital.facilities || [],
+                      registration_number: hospital.registration_number || "",
+                      accreditation: hospital.accreditation || { body: "", status: "" },
+                      is_active: hospital.is_active ?? true,
+                    });
+                    setShowAddHospitalModal(true);
+                  }}
+                >
+                  <i className="fas fa-edit"></i> Edit
+                </button>
                 <button
                   className="danger-btn"
                   onClick={() => handleDeleteHospital(hospital.id)}
@@ -748,7 +817,7 @@ const AdminSection = () => {
                 </label>
               </div>
               <button type="submit" className="submit-btn">
-                Add Test
+                {editingTest ? 'Save Changes' : 'Add Test'}
               </button>
             </form>
           </div>
@@ -958,7 +1027,7 @@ const AdminSection = () => {
               </div>
 
               <button type="submit" className="submit-btn">
-                Add Hospital
+                {editingHospital ? 'Save Changes' : 'Add Hospital'}
               </button>
             </form>
           </div>

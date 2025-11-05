@@ -394,6 +394,24 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  const updateMedicalTest = async (testId, updates) => {
+    try {
+      const res = await axios.put(`${API_BASE}/admin/medical-test/${testId}`, updates, {
+        withCredentials: true,
+      });
+
+      if (res.data && res.data.success) {
+        setMedicalTests((prev) => prev.map((t) => (t.id === testId ? { ...t, ...updates } : t)));
+        showNotification(res.data.message || 'Medical test updated', 'success');
+        return true;
+      }
+    } catch (error) {
+      console.error('Update test error:', error);
+      showNotification(error.response?.data?.message || 'Error updating test', 'error');
+      return false;
+    }
+  };
+
   const deleteMedicalTest = async (testId) => {
     try {
       const res = await axios.delete(
@@ -591,6 +609,7 @@ export const AppProvider = ({ children }) => {
     updateAppointmentStatus,
     createTestResult,
     createMedicalTest,
+  updateMedicalTest,
     deleteMedicalTest,
     deleteUser,
     refreshAdminData,
