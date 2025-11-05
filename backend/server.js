@@ -31,6 +31,11 @@ app.use(cookieParser());
 app.use(bodyParser.json({ limit: "10mb" }));
 app.use(bodyParser.urlencoded({ extended: true, limit: "10mb" }));
 
+// Serve uploads directory for files (test result attachments, etc.)
+const path = require('path');
+const uploadsDir = path.join(__dirname, 'uploads');
+app.use('/uploads', express.static(uploadsDir));
+
 // Rate limiting
 app.use("/api/auth/", authLimiter);
 app.use("/api/", apiLimiter);
@@ -57,6 +62,7 @@ app.use("/api/users", require("./routes/users"));
 app.use("/api/test-results", require("./routes/testResult"));
 app.use("/api/admin", require("./routes/admin"));
 app.use("/api/hospitals", require("./routes/hospital"));
+app.use("/api/config", require("./routes/config"));
 
 // 404 handler
 app.use("*", (req, res) => {
@@ -86,7 +92,7 @@ app.use((error, req, res, next) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(" SpeciCare server running on port ${PORT}");
+  console.log(`SpeciCare server running on port ${PORT}`);
 });
 
 require("./models/index");

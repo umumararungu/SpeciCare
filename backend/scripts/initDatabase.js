@@ -148,43 +148,20 @@ async function createTables(client) {
 
     // Test results table
     await client.query(`
-        CREATE TABLE IF NOT EXISTS test_results (
-            id SERIAL PRIMARY KEY,
-            appointment_id INTEGER NOT NULL REFERENCES appointments(id),
-            test_id INTEGER NOT NULL REFERENCES medical_tests(id),
-            patient_id INTEGER NOT NULL REFERENCES users(id),
-            hospital_id INTEGER NOT NULL REFERENCES hospitals(id),
-            result_type VARCHAR (255) NOT NULL CHECK (result_type IN ('numeric', 'text', 'image', 'file', 'mixed')),
-            files JSONB,
-            numeric_results JSONB,
-            text_findings TEXT,
-            text_impression TEXT,
-            text_conclusion TEXT,
-            text_recommendations JSONB,
-            text_technical_details TEXT,
-            quality_control_performed_by VARCHAR(100),
-            quality_control_performed_at TIMESTAMP,
-            quality_controls JSONB,
-            status VARCHAR(20) DEFAULT 'pending' CHECK (status IN (
-                'pending', 'processing', 'completed', 'verified', 'amended', 'cancelled'
-            )),
-            verified_by_id INTEGER REFERENCES users(id),
-            verified_at TIMESTAMP,
-            priority VARCHAR(20) DEFAULT 'routine' CHECK (priority IN ('routine', 'urgent', 'stat')),
-            promised_turnaround_time INTEGER,
-            actual_turnaround_time INTEGER,
-            met_deadline BOOLEAN,
-            access_log JSONB,
-            shared_with JSONB,
-            is_public BOOLEAN DEFAULT FALSE,
-            amendments JSONB,
-            report_version VARCHAR(20) DEFAULT '1.0',
-            template_used VARCHAR(100),
-            generated_by VARCHAR(100),
-            language VARCHAR(10) DEFAULT 'en',
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
+    CREATE TABLE IF NOT EXISTS test_results (
+        id SERIAL PRIMARY KEY,
+        appointment_id INTEGER NOT NULL REFERENCES appointments(id),
+        test_id INTEGER NOT NULL REFERENCES medical_tests(id),
+        patient_id INTEGER NOT NULL REFERENCES users(id),
+        hospital_id INTEGER NOT NULL REFERENCES hospitals(id),
+        numeric_value VARCHAR(255),
+        text_results TEXT,
+        priority VARCHAR(20) DEFAULT 'normal' CHECK (priority IN ('normal', 'urgent')),
+        files JSONB,
+        status VARCHAR(20) DEFAULT 'completed' CHECK (status IN ('pending', 'completed', 'verified')),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
     `);
 
     // Notifications table

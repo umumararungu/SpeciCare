@@ -7,8 +7,10 @@ const DashboardSection = () => {
   const [activeTab, setActiveTab] = useState("appointments");
 
 
-  const userResults = testResults.filter(
-    (result) => result.patientPhone === currentUser?.phone
+  // Server returns only the current user's results at GET /test-results/my,
+  // but be defensive and filter by patient_id when available.
+  const userResults = (testResults || []).filter(
+    (result) => !result.patient_id || result.patient_id === currentUser?.id
   );
 
   const renderAppointmentsTab = () => (
@@ -71,37 +73,48 @@ const DashboardSection = () => {
             <p>Your test results will appear here after your appointments</p>
           </div>
         ) : (
-          userResults.map((result) => (
-            <div key={result.id} className="result-item">
-              <div className="result-header">
-                <strong>{result.testName}</strong>
-                <span className={`status ${result.status}`}>
-                  {result.status}
-                </span>
+          userResults.map((result) => {
+            const testName = result.medicalTest?.name || result.testName || 'Test';
+            const hospitalName = result.hospital?.name || result.hospitalName || 'Hospital';
+            const apptDate = result.appointment?.appointment_date || result.testDate || result.created_at || null;
+            const files = result.files || [];
+            return (
+              <div key={result.id} className="result-item">
+                <div className="result-header">
+                  <strong>{testName}</strong>
+                  <span className={`status ${result.status}`}>
+                    {result.status}
+                  </span>
+                </div>
+                <p>
+                  <i className="fas fa-hospital"></i> {hospitalName}
+                </p>
+                <p>
+                  <i className="fas fa-calendar"></i>{" "}
+                  {apptDate ? new Date(apptDate).toLocaleDateString() : 'N/A'}
+                </p>
+                {files.length > 0 && (
+                  <p>
+                    <i className="fas fa-paperclip"></i> {files.length} file{files.length>1? 's':''}
+                  </p>
+                )}
+                <div className="result-actions">
+                  <button
+                    className="book-btn"
+                    onClick={() => viewResult(result)}
+                  >
+                    <i className="fas fa-eye"></i> View Results
+                  </button>
+                  <button
+                    className="secondary-btn"
+                    onClick={() => downloadResult(result)}
+                  >
+                    <i className="fas fa-download"></i> Download
+                  </button>
+                </div>
               </div>
-              <p>
-                <i className="fas fa-hospital"></i> {result.hospital}
-              </p>
-              <p>
-                <i className="fas fa-calendar"></i>{" "}
-                {new Date(result.testDate).toLocaleDateString()}
-              </p>
-              <div className="result-actions">
-                <button
-                  className="book-btn"
-                  onClick={() => viewResult(result.id)}
-                >
-                  <i className="fas fa-eye"></i> View Results
-                </button>
-                <button
-                  className="secondary-btn"
-                  onClick={() => downloadResult(result.id)}
-                >
-                  <i className="fas fa-download"></i> Download
-                </button>
-              </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>
@@ -139,22 +152,34 @@ const DashboardSection = () => {
     </div>
   );
 
-  const viewResult = (resultId) => {
-    const result = userResults.find((r) => r.id === resultId);
-    if (result) {
-      alert(
-        `Viewing results for: ${result.testName}\nHospital: ${result.hospital}\nDate: ${result.testDate}\n\nIn a real application, this would display the actual test results.`
-      );
+  const viewResult = (result) => {
+    // If there are files, open the first file in a new tab. Otherwise show details.
+    const files = result.files || [];
+    if (files.length > 0 && files[0].url) {
+      window.open(files[0].url, '_blank');
+      return;
     }
+    // Otherwise show a compact details dialog
+    const testName = result.medicalTest?.name || result.testName || 'Test';
+    const hospitalName = result.hospital?.name || result.hospitalName || 'Hospital';
+    const apptDate = result.appointment?.appointment_date || result.testDate || result.created_at || 'N/A';
+    const numeric = result.numeric_results ? JSON.stringify(result.numeric_results) : 'N/A';
+    const text = result.text_results ? JSON.stringify(result.text_results) : result.text_findings || 'N/A';
+    alert(`Result: ${testName}\nHospital: ${hospitalName}\nDate: ${apptDate}\n\nNumeric: ${numeric}\nText: ${text}`);
   };
 
-  const downloadResult = (resultId) => {
-    const result = userResults.find((r) => r.id === resultId);
-    if (result) {
-      alert(
-        `Downloading results for: ${result.testName}\n\nIn a real application, this would download the PDF file.`
-      );
+  const downloadResult = (result) => {
+    const files = result.files || [];
+    if (files.length === 0) {
+      alert('No attached files to download for this result.');
+      return;
     }
+    // Open each file url in a new tab (browser will handle download or display)
+    files.forEach((f) => {
+      if (f.url) {
+        window.open(f.url, '_blank');
+      }
+    });
   };
 
   return (

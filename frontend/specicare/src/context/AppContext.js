@@ -33,6 +33,7 @@ export const AppProvider = ({ children }) => {
   const [allUsers, setAllUsers] = useState([]);
   const [allAppointments, setAllAppointments] = useState([]);
   const [hospitals, setHospitals] = useState([]);
+  const [currentResultDraft, setCurrentResultDraft] = useState(null);
 
   const API_BASE = "http://localhost:5000/api";
 
@@ -334,7 +335,8 @@ export const AppProvider = ({ children }) => {
         );
 
         showNotification(res.data.message, "success");
-        return true;
+        // return the updated appointment so callers can act on it
+        return res.data.appointment || null;
       }
     } catch (error) {
       console.error("Update appointment error:", error);
@@ -342,8 +344,32 @@ export const AppProvider = ({ children }) => {
         error.response?.data?.message || "Error updating appointment",
         "error"
       );
-      return false;
+      return null;
     }
+  };
+
+  // Create a test result (admin)
+  const createTestResult = async (payload) => {
+    try {
+      let res;
+      // If payload is FormData (multipart), let the browser set headers
+      if (typeof FormData !== 'undefined' && payload instanceof FormData) {
+        res = await axios.post(`${API_BASE}/test-results`, payload, { withCredentials: true });
+      } else {
+        res = await axios.post(`${API_BASE}/test-results`, payload, { withCredentials: true });
+      }
+
+      if (res.data && res.data.success) {
+        // Optionally refresh testResults or admin data
+        await refreshAdminData();
+        showNotification('Test result created successfully', 'success');
+        return res.data.testResult;
+      }
+    } catch (error) {
+      console.error('Create test result error:', error);
+      showNotification(error.response?.data?.message || 'Error creating test result', 'error');
+    }
+    return null;
   };
 
   const createMedicalTest = async (testData) => {
@@ -523,6 +549,7 @@ export const AppProvider = ({ children }) => {
     appointments: isAdmin ? allAppointments : appointments,
     testResults,
     currentTest,
+    currentResultDraft,
     medicalTests,
     hospitals,
     activeSection,
@@ -537,6 +564,7 @@ export const AppProvider = ({ children }) => {
     // Setters
     setActiveSection,
     setMedicalTests,
+  setCurrentResultDraft,
 
     // Auth functions
     login,
@@ -561,6 +589,7 @@ export const AppProvider = ({ children }) => {
 
     // Admin functions
     updateAppointmentStatus,
+    createTestResult,
     createMedicalTest,
     deleteMedicalTest,
     deleteUser,

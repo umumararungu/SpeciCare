@@ -59,3 +59,32 @@ async function sendSMS(to, appointment = {}, extras = {}) {
 module.exports = {
   sendSMS,
 };
+
+// Send a custom SMS body to a recipient. Returns an object with success flag and details/error.
+async function sendCustomSMS(to, body) {
+  if (!client) {
+    return { success: false, error: new Error('Twilio client not configured') };
+  }
+  if (!to) {
+    return { success: false, error: new Error('Recipient phone number not provided') };
+  }
+  try {
+    const createParams = { body, to };
+    if (fromNumber) {
+      createParams.from = fromNumber;
+    } else if (messagingServiceSid) {
+      createParams.messagingServiceSid = messagingServiceSid;
+    } else {
+      const err = new Error("Twilio configuration error: either TWILIO_FROM or TWILIO_MESSAGING_SERVICE_SID must be set in environment variables.");
+      console.error(err.message);
+      return { success: false, error: err };
+    }
+    const message = await client.messages.create(createParams);
+    return { success: true, sid: message.sid, message };
+  } catch (error) {
+    console.error('Error sending custom SMS via Twilio:', error);
+    return { success: false, error };
+  }
+}
+
+module.exports.sendCustomSMS = sendCustomSMS;

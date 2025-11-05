@@ -14,6 +14,9 @@ const AdminSection = () => {
     deleteMedicalTest,
     deleteUser,
     updateAppointmentStatus,
+    setCurrentResultDraft,
+    createTestResult,
+  currentResultDraft,
     adminStats,
     allAppointments,
     currentUser,
@@ -107,7 +110,8 @@ const AdminSection = () => {
       insuranceCovered: true,
     });
   };
-
+  
+  
   // Add new hospital
 
   const [showAddHospitalModal, setShowAddHospitalModal] = useState(false);
@@ -183,19 +187,83 @@ const AdminSection = () => {
     }
   };
 
-  const updateBookingStatus = (bookingId, status) => {
-    updateAppointmentStatus(bookingId, status);
-    window.location.reload(); // Simple refresh to update state
-
-    showNotification(`Booking ${status} successfully!`, "success");
-  };
+  
 
   const handleDeleteUser = (userId) => {
     if (window.confirm("Are you sure you want to delete this user?")) {
       deleteUser(userId);
-
       showNotification("User deleted successfully!", "success");
     }
+  };
+
+  const [showCreateResultModal, setShowCreateResultModal] = useState(false);
+  const [resultInputs, setResultInputs] = useState({ numeric: "", text: "", priority: "normal" });
+  const [resultFiles, setResultFiles] = useState([]);
+
+  const handleSubmitTestResult = async (e) => {
+    e.preventDefault();
+    const draft = currentResultDraft || {};
+    // Build FormData to allow file uploads
+    const form = new FormData();
+    form.append('appointmentId', draft.appointmentId);
+    form.append('testId', draft.testId);
+    form.append('patientId', draft.patientId);
+    form.append('hospitalId', draft.hospitalId);
+    form.append('priority', resultInputs.priority || 'normal');
+    if (resultInputs.numeric) {
+      // store numeric_results as JSON string
+      form.append('numeric_results', JSON.stringify({ value: resultInputs.numeric }));
+    }
+    if (resultInputs.text) {
+      form.append('text_results', JSON.stringify({ notes: resultInputs.text }));
+    }
+
+    // Append files if any
+    if (resultFiles && resultFiles.length > 0) {
+      for (let i = 0; i < resultFiles.length; i++) {
+        form.append('files', resultFiles[i]);
+      }
+    }
+
+    const created = await createTestResult(form);
+    if (created) {
+      setShowCreateResultModal(false);
+      setCurrentResultDraft(null);
+      setResultInputs({ numeric: "", text: "", priority: "normal" });
+      setResultFiles([]);
+      showNotification('Test result saved', 'success');
+    }
+  };
+
+  const onFilesChange = (e) => {
+    const files = Array.from(e.target.files || []);
+    setResultFiles(files);
+  };
+
+  const updateBookingStatus = async (bookingId, status) => {
+    const res = await updateAppointmentStatus(bookingId, status);
+
+    // Try to get the appointment from the API response; if not available, find it in local state
+    let appointment = null;
+    if (res && typeof res === 'object' && res.id) {
+      appointment = res;
+    } else {
+      // bookingsSource is defined above and already selects admin vs regular source
+      appointment = (bookingsSource || []).find((b) => b.id === bookingId) || null;
+    }
+
+    // If appointment was marked completed, open the create-result modal prefilled
+    if (status === "completed" && appointment) {
+      const draft = {
+        appointmentId: appointment.id,
+        testId: appointment.test_id || appointment.testId || (appointment.medicalTest && appointment.medicalTest.id),
+        patientId: appointment.patient_id || appointment.patientId || (appointment.user && appointment.user.id),
+        hospitalId: appointment.hospital_id || appointment.hospitalId || (appointment.hospital && appointment.hospital.id),
+      };
+      setCurrentResultDraft(draft);
+      setShowCreateResultModal(true);
+    }
+    // No full page reload — rely on context updates for UI refresh.
   };
 
   const renderOverviewTab = () => (
@@ -892,6 +960,70 @@ const AdminSection = () => {
               <button type="submit" className="submit-btn">
                 Add Hospital
               </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Create Test Result Modal */}
+      {showCreateResultModal && (
+        <div id="createResultModal" className="modal" style={{ display: "block" }}>
+          <div className={`modal-content ${showCreateResultModal ? "show" : ""}`}>
+            <span className="close" onClick={() => { setShowCreateResultModal(false); setCurrentResultDraft(null); }}>&times;</span>
+            <h2>Create Test Result</h2>
+            <div className="form-group">
+              {(() => {
+                const draft = currentResultDraft || {};
+                // Try to find appointment details in available sources
+                const appointmentObj = (bookingsSource || []).find(a => a.id === draft.appointmentId) || (allAppointments || []).find(a => a.id === draft.appointmentId) || null;
+                const patientName = appointmentObj?.user?.name || appointmentObj?.patient_name || draft.patientId || 'N/A';
+                const testName = appointmentObj?.medicalTest?.name || appointmentObj?.testName || draft.testId || 'N/A';
+                const hospitalName = appointmentObj?.hospital?.name || appointmentObj?.hospitalName || draft.hospitalId || 'N/A';
+                const apptRef = appointmentObj?.id || draft.appointmentId || 'N/A';
+                return (
+                  <>
+                    <p><strong>Appointment:</strong> {apptRef}</p>
+                    <p><strong>Patient:</strong> {patientName}</p>
+                    <p><strong>Test:</strong> {testName}</p>
+                    <p><strong>Hospital:</strong> {hospitalName}</p>
+                  </>
+                );
+              })()}
+            </div>
+            <form onSubmit={handleSubmitTestResult}>
+              <div className="form-group">
+                <label>Numeric Results (single value)</label>
+                <input type="text" value={resultInputs.numeric} onChange={(e) => setResultInputs(prev => ({ ...prev, numeric: e.target.value }))} />
+              </div>
+              <div className="form-group">
+                <label>Text Results / Notes</label>
+                <textarea value={resultInputs.text} onChange={(e) => setResultInputs(prev => ({ ...prev, text: e.target.value }))} />
+              </div>
+              <div className="form-group">
+                <label>Priority</label>
+                <select value={resultInputs.priority} onChange={(e) => setResultInputs(prev => ({ ...prev, priority: e.target.value }))}>
+                  <option value="normal">Normal</option>
+                  <option value="urgent">Urgent</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Attach Files (optional)</label>
+                <input type="file" multiple onChange={onFilesChange} />
+                {resultFiles && resultFiles.length > 0 && (
+                  <div className="attached-files-list">
+                    <strong>Files to upload:</strong>
+                    <ul>
+                      {resultFiles.map((f, idx) => (
+                        <li key={idx}>{f.name} ({(f.size/1024).toFixed(1)} KB)</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+              <div className="form-group items-center">
+                <button type="submit" className="submit-btn">Save Result</button>
+                <button type="button" className="secondary-btn" onClick={() => { setShowCreateResultModal(false); setCurrentResultDraft(null); }}>Close</button>
+              </div>
             </form>
           </div>
         </div>

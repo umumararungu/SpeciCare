@@ -24,62 +24,29 @@ return TestResult = sequelize.define('testResult', {
     type: DataTypes.UUID,
     allowNull: false,
   },
-  result_type: {
-    type: DataTypes.ENUM('numeric', 'text', 'image', 'file', 'mixed'),
-    allowNull: false,
-  },
+  // result_type: {
+  //   type: DataTypes.ENUM('numeric', 'text', 'image', 'file', 'mixed'),
+  //   allowNull: false,
+  // },
   files: {
     type: DataTypes.JSONB, // [{ filename, url, uploadedBy, ... }]
     defaultValue: [],
   },
-  numeric_results: {
-    type: DataTypes.JSONB, // [{ parameter, value, unit, interpretation }]
-    defaultValue: [],
+  numeric_value: {
+    type: DataTypes.STRING, // [{ parameter, value, unit, interpretation }]
   },
   text_results: {
     type: DataTypes.JSONB, // { findings, impression, conclusion, ... }
-    defaultValue: {},
-  },
-  quality_control: {
-    type: DataTypes.JSONB, // { performedBy, controls: [...] }
     defaultValue: {},
   },
   status: {
     type: DataTypes.ENUM('pending', 'processing', 'completed', 'verified', 'amended', 'cancelled'),
     defaultValue: 'pending',
   },
-  verified_by: {
-    type: DataTypes.UUID,
-  },
-  verified_at: {
-    type: DataTypes.DATE,
-  },
+
   priority: {
     type: DataTypes.ENUM('routine', 'urgent', 'stat'),
     defaultValue: 'routine',
-  },
-  turnaround_time: {
-    type: DataTypes.JSONB, // { promised, actual, metDeadline }
-    defaultValue: {},
-  },
-  access_log: {
-    type: DataTypes.JSONB, // [{ accessedBy, accessedAt, action }]
-    defaultValue: [],
-  },
-  sharing: {
-    type: DataTypes.JSONB, // { sharedWith: [...], isPublic: true/false }
-    defaultValue: {},
-  },
-  amendments: {
-    type: DataTypes.JSONB, // [{ reason, previousValue, newValue }]
-    defaultValue: [],
-  },
-  metadata: {
-    type: DataTypes.JSONB, // { reportVersion, templateUsed, language, etc. }
-    defaultValue: {
-      reportVersion: '1.0',
-      language: 'en',
-    },
   },
   created_at: {
     type: DataTypes.DATE,
