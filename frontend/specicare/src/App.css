@@ -1152,6 +1152,46 @@ body.modal-open {
     align-items: center;
 }
 
+/* Make filter controls visually consistent with admin UI */
+.filter-controls select,
+.filter-controls input {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    padding: 0.45rem 0.7rem;
+    border-radius: 6px;
+    border: 1px solid var(--teal-dark);
+    background: var(--white);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    font-size: 0.95rem;
+    color: var(--text);
+    min-width: 160px;
+    cursor: pointer;
+}
+
+.filter-controls select:focus,
+.filter-controls input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.06);
+}
+
+.filter-controls .small {
+    min-width: 90px;
+}
+
+/* Responsive: stack filters on small screens */
+@media (max-width: 640px) {
+    .filter-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .filter-controls select,
+    .filter-controls input {
+        width: 100%;
+    }
+}
+
 /* Admin-specific buttons */
 .danger-btn {
     background: var(--error);

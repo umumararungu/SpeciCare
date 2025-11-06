@@ -449,24 +449,6 @@ const LoginSection = () => {
                 </div>
               </div>
 
-              {/* Terms and Conditions */}
-              <div className="form-group" style={{ margin: '1.5rem 0' }}>
-                <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', fontSize: '0.9rem' }}>
-                  <input 
-                    type="checkbox" 
-                    id="registerTerms" 
-                    required 
-                    checked={registerData.terms}
-                    onChange={(e) => handleRegisterChange('terms', e.target.checked)}
-                    style={{ marginTop: '0.25rem' }}
-                  />
-                  {/* <span>
-                    I agree to the <a href="#" style={{ color: 'var(--teal)' }}>Terms of Service</a> and{' '}
-                    <a href="#" style={{ color: 'var(--teal)' }}>Privacy Policy</a>
-                  </span> */}
-                </label>
-              </div>
-
               <button type="submit" className="submit-btn" disabled={isLoading}>
                 <i className="fas fa-user-plus"></i> 
                 {isLoading ? 'Creating Account...' : 'Create Account'}
