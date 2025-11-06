@@ -22,35 +22,75 @@ const DashboardSection = () => {
     >
       <h3>Upcoming Appointments</h3>
       <div className="appointment-list">
-        {appointments.length === 0 ? (
+        {(!appointments || appointments.length === 0) ? (
           <div className="no-appointments">
             <i className="fas fa-calendar-times"></i>
             <h4>No appointments yet</h4>
             <p>Book your first medical test to get started</p>
           </div>
         ) : (
-          appointments.map((appointment) => (
-            <div key={appointment.id} className="appointment-item">
-              <div className="appointment-header">
-                <strong>{appointment.medicalTest.name}</strong>
-                <span className={`status ${appointment.status}`}>
-                  {appointment.status}
-                </span>
-              </div>
-              <p>
-                <i className="fas fa-hospital"></i> {appointment.hospital.name}
-              </p>
-              <p>
-                <i className="fas fa-calendar"></i>{" "}
-                {new Date(appointment.date).toLocaleDateString()}
-              </p>
-              <p>
-                <i className="fas fa-money-bill-wave"></i>{" "}
-                {appointment.medicalTest.price.toLocaleString()} RWF
-              </p>
-              <p className="reference">Reference: {appointment.reference}</p>
-            </div>
-          ))
+          // Filter and show only upcoming appointments with a valid appointment date
+          (() => {
+            const now = new Date();
+            const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+
+            const normalizeDate = (appt) => {
+              // Try multiple possible field names
+              const d = appt.appointment_date || appt.appintment_date || appt.date || appt.appointmentDate || appt.appintmentDate || appt.created_at || null;
+              if (!d) return null;
+              const parsed = new Date(d);
+              if (isNaN(parsed.getTime())) return null;
+              // return date at local midnight for consistent comparisons
+              return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+            };
+
+            const upcoming = (appointments || [])
+              .map((a) => ({ raw: a, apptDate: normalizeDate(a) }))
+              .filter((x) => x.apptDate && x.apptDate.getTime() >= todayStart)
+              .sort((a, b) => a.apptDate - b.apptDate)
+              .map((x) => x.raw);
+
+            if (upcoming.length === 0) {
+              return (
+                <div className="no-appointments">
+                  <i className="fas fa-calendar-times"></i>
+                  <h4>No upcoming appointments</h4>
+                  <p>Book a medical test to schedule your next appointment</p>
+                </div>
+              );
+            }
+
+            return upcoming.map((appointment) => {
+              const apptDateRaw = appointment.appointment_date || appointment.appintment_date || appointment.date || appointment.appointmentDate || appointment.appintmentDate || appointment.created_at || null;
+              const apptDate = apptDateRaw ? new Date(apptDateRaw) : null;
+              const dateDisplay = apptDate ? apptDate.toLocaleDateString() : 'N/A';
+              const timeSlot = appointment.time_slot || appointment.timeSlot || '';
+              const testName = appointment.medicalTest?.name || appointment.testName || 'Test';
+              const hospitalName = appointment.hospital?.name || appointment.hospitalName || 'Hospital';
+              const price = appointment.medicalTest?.price ? appointment.medicalTest.price.toLocaleString() : '';
+
+              return (
+                <div key={appointment.id} className="appointment-item">
+                  <div className="appointment-header">
+                    <strong>{testName}</strong>
+                    <span className={`status ${appointment.status}`}>{appointment.status}</span>
+                  </div>
+                  <p>
+                    <i className="fas fa-hospital"></i> {hospitalName}
+                  </p>
+                  <p>
+                    <i className="fas fa-calendar"></i> {dateDisplay} {timeSlot ? ` • ${timeSlot}` : ''}
+                  </p>
+                  {price && (
+                    <p>
+                      <i className="fas fa-money-bill-wave"></i> {price} RWF
+                    </p>
+                  )}
+                  <p className="reference">Reference: {appointment.reference || appointment.id}</p>
+                </div>
+              );
+            });
+          })()
         )}
       </div>
       <button className="cta-button" onClick={() => setActiveSection("search")}>

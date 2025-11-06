@@ -10,6 +10,20 @@ import axios from "axios";
 
 const AppContext = createContext();
 
+// Helper: convert snake_case keys to camelCase recursively for objects returned by backend
+const toCamel = (s) => String(s).replace(/_([a-z])/g, (m, p1) => p1.toUpperCase());
+const camelizeObject = (obj) => {
+  if (!obj || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(camelizeObject);
+  const out = {};
+  Object.keys(obj).forEach((k) => {
+    const v = obj[k];
+    const key = toCamel(k);
+    out[key] = camelizeObject(v);
+  });
+  return out;
+};
+
 // Custom hook to use the app context
 export const useApp = () => {
   const context = useContext(AppContext);
@@ -73,9 +87,9 @@ export const AppProvider = ({ children }) => {
         axios.get(`${API_BASE}/admin/users`, { withCredentials: true }),
         axios.get(`${API_BASE}/admin/appointments`, { withCredentials: true }),
       ]);
-      setAdminStats(statsRes.data.stats);
-      setAllUsers(usersRes.data.users);
-      setAllAppointments(appointmentsRes.data.appointments);
+  setAdminStats(statsRes.data.stats);
+  setAllUsers(camelizeObject(usersRes.data.users || []));
+  setAllAppointments(camelizeObject(appointmentsRes.data.appointments || []));
     } catch (error) {
       console.error("Error fetching admin data:", error);
       showNotification("Error loading admin data", "error");
@@ -91,44 +105,49 @@ export const AppProvider = ({ children }) => {
       const userRes = await axios.get(`${API_BASE}/users/me`, {
         withCredentials: true,
       });
-      setCurrentUser(userRes.data.user);
+      setCurrentUser(camelizeObject(userRes.data.user));
 
       // Fetch medical tests
       const testsRes = await axios.get(`${API_BASE}/medical-test`);
       console.log("medical test: ", testsRes);
-      setMedicalTests(testsRes.data);
+  setMedicalTests(camelizeObject(testsRes.data || []));
 
       const hospitalsRes = await axios.get(`${API_BASE}/hospitals`, {
         withCredentials: true,
       });
-      setHospitals(hospitalsRes.data.hospitals);
+  setHospitals(camelizeObject(hospitalsRes.data.hospitals || []));
 
       const apptsRes = await axios.get(`${API_BASE}/appointments/my`, {
         withCredentials: true,
       });
-      setAppointments(apptsRes.data);
+  setAppointments(camelizeObject(apptsRes.data || []));
       console.log("appointments: ", apptsRes.data);
 
       // If user is admin, fetch admin data
-      if (userRes.data.user.role === "admin") {
+        if (userRes.data.user.role === "admin") {
         await fetchAdminData();
       } else {
         // Regular user data
         const apptsRes = await axios.get(`${API_BASE}/appointments/my`, {
           withCredentials: true,
         });
-        setAppointments(apptsRes.data);
+        setAppointments(camelizeObject(apptsRes.data || []));
 
         const resultsRes = await axios.get(`${API_BASE}/test-results/my`, {
           withCredentials: true,
         });
-        setTestResults(resultsRes.data);
+        setTestResults(camelizeObject(resultsRes.data || []));
       }
 
       setIsLoading(false);
     } catch (error) {
       console.error("Error initializing data:", error);
       setIsLoading(false);
+      // If initialize fails (no session / server error), clear user and redirect to login
+      setCurrentUser(null);
+      setAppointments([]);
+      setTestResults([]);
+      setActiveSection("login");
     }
   }, [API_BASE, fetchAdminData]); // Include fetchAdminData in dependencies
 
@@ -151,7 +170,7 @@ export const AppProvider = ({ children }) => {
       );
 
       if (res.data.success) {
-        setCurrentUser(res.data.user);
+        setCurrentUser(camelizeObject(res.data.user));
         setActiveSection("dashboard");
         showNotification(res.data.message, "success");
         clearErrors();
@@ -226,10 +245,10 @@ export const AppProvider = ({ children }) => {
       setIsLoading(true);
       clearErrors();
 
-      const res = await axios.post(`${API_BASE}/users/register`, userData);
+  const res = await axios.post(`${API_BASE}/users/register`, userData, { withCredentials: true });
 
       if (res.data.success) {
-        setCurrentUser(res.data.user);
+        setCurrentUser(camelizeObject(res.data.user));
         setActiveSection("dashboard");
         showNotification(res.data.message, "success");
         clearErrors();
@@ -301,7 +320,7 @@ export const AppProvider = ({ children }) => {
         },
         { withCredentials: true }
       );
-      setAppointments((prev) => [...prev, res.data]);
+      setAppointments((prev) => [...prev, camelizeObject(res.data)]);
       setCurrentTest(null);
       showNotification("Booking confirmed successfully!", "success");
       setIsLoading(false);
@@ -465,7 +484,7 @@ export const AppProvider = ({ children }) => {
       const res = await axios.get(`${API_BASE}/hospitals`, {
         withCredentials: true,
       });
-      setHospitals(res.data.hospitals || []);
+      setHospitals(camelizeObject(res.data.hospitals || []));
     } catch (error) {
       console.error("Error fetching hospitals:", error);
       showNotification("Error loading hospitals", "error");
@@ -481,7 +500,7 @@ export const AppProvider = ({ children }) => {
       );
 
       if (res.data.success) {
-        setHospitals((prev) => [...prev, res.data.hospital]);
+        setHospitals((prev) => [...prev, camelizeObject(res.data.hospital)]);
         showNotification(
           res.data.message || "Hospital added successfully",
           "success"
