@@ -106,7 +106,14 @@ export const AppProvider = ({ children }) => {
       const userRes = await axios.get(`${API_BASE}/users/me`, {
         withCredentials: true,
       });
-      setCurrentUser(camelizeObject(userRes.data.user));
+      const camelUser = camelizeObject(userRes.data.user);
+      setCurrentUser(camelUser);
+      // If already logged in, land admins on admin dashboard, regular users on dashboard
+      if (camelUser?.role === 'admin') {
+        setActiveSection('admin');
+      } else {
+        setActiveSection('dashboard');
+      }
 
       // Fetch medical tests
       const testsRes = await axios.get(`${API_BASE}/medical-test`);
@@ -124,9 +131,18 @@ export const AppProvider = ({ children }) => {
   setAppointments(camelizeObject(apptsRes.data || []));
       console.log("appointments: ", apptsRes.data);
 
-      // If user is admin, fetch admin data
+      // If user is admin, fetch admin data and notifications
         if (userRes.data.user.role === "admin") {
         await fetchAdminData();
+        // Fetch notifications for admin as well so admin sees server-side events immediately
+        try {
+          const notifRes = await axios.get(`${API_BASE}/notifications/my`, { withCredentials: true });
+          if (notifRes.data && notifRes.data.success) {
+            setNotifications(camelizeObject(notifRes.data.notifications || []));
+          }
+        } catch (err) {
+          console.error('Error fetching notifications (admin):', err);
+        }
       } else {
         // Regular user data
         const apptsRes = await axios.get(`${API_BASE}/appointments/my`, {
@@ -173,8 +189,10 @@ export const AppProvider = ({ children }) => {
       );
 
       if (res.data.success) {
-        setCurrentUser(camelizeObject(res.data.user));
-        setActiveSection("dashboard");
+      const camelUser = camelizeObject(res.data.user);
+      setCurrentUser(camelUser);
+      // Redirect admin users to admin dashboard, others to user dashboard
+      setActiveSection(camelUser?.role === 'admin' ? 'admin' : 'dashboard');
         showNotification(res.data.message, "success");
         clearErrors();
 
@@ -251,8 +269,9 @@ export const AppProvider = ({ children }) => {
   const res = await axios.post(`${API_BASE}/users/register`, userData, { withCredentials: true });
 
       if (res.data.success) {
-        setCurrentUser(camelizeObject(res.data.user));
-        setActiveSection("dashboard");
+        const camelUser = camelizeObject(res.data.user);
+        setCurrentUser(camelUser);
+        setActiveSection(camelUser?.role === 'admin' ? 'admin' : 'dashboard');
         showNotification(res.data.message, "success");
         clearErrors();
 
@@ -323,6 +342,8 @@ export const AppProvider = ({ children }) => {
         },
         { withCredentials: true }
       );
+      // Capture created appointment (backend returns created appointment)
+      const createdAppointment = res?.data ? camelizeObject(res.data) : null;
       // Refresh the user's appointments from the server to ensure consistent state
       try {
         const apptsRes = await axios.get(`${API_BASE}/appointments/my`, { withCredentials: true });
@@ -330,10 +351,17 @@ export const AppProvider = ({ children }) => {
       } catch (err) {
         // Fallback: append the returned appointment if fetching fresh list fails
         console.debug('Could not refresh appointments after booking, appending locally', err && err.message);
-        setAppointments((prev) => [...prev, camelizeObject(res.data)]);
+        setAppointments((prev) => [...prev, createdAppointment || camelizeObject(res.data)]);
       }
       setCurrentTest(null);
-      showNotification("Booking confirmed successfully!", "success");
+      // Show reference when available to help users track bookings
+      const ref = createdAppointment?.reference || createdAppointment?.id;
+      showNotification(
+        ref ? `Booking confirmed — reference: ${ref}` : "Booking confirmed successfully!",
+        "success"
+      );
+      // Return created appointment for callers that need it
+      return createdAppointment || null;
       setIsLoading(false);
     } catch (error) {
       console.error("Booking error:", error);

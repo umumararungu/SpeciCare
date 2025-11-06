@@ -22,6 +22,7 @@ const AdminSection = () => {
     currentUser,
     updateMedicalTest,
     updateHospital,
+    notifications,
   } = useApp();
   const [activeTab, setActiveTab] = useState("overview");
   const [adminActivities, setAdminActivities] = useState([]);
@@ -69,7 +70,29 @@ const AdminSection = () => {
       ? bookingsSource
       : bookingsSource.filter((apt) => apt.status === bookingStatusFilter);
 
-  const recentActivities = [...adminActivities].reverse().slice(0, 5);
+  // Merge client-side admin activities (localStorage) with server-side notifications
+  const serverActivities = (notifications || []).map((n) => ({
+    id: n.id,
+    type: n.type || 'system',
+    message: n.message || n.title || '',
+    timestamp: n.createdAt || n.created_at || n.createdAt,
+    source: 'server',
+  }));
+
+  const clientActivities = (adminActivities || []).map((a, idx) => ({
+    id: `client-${idx}`,
+    type: a.type || 'system',
+    message: a.message || '',
+    timestamp: a.timestamp || new Date().toISOString(),
+    admin: a.admin,
+    source: 'client',
+  }));
+
+  const merged = [...serverActivities, ...clientActivities]
+    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+    .slice(0, 5);
+
+  const recentActivities = merged;
 
   // Add new test function
   const [showAddTestModal, setShowAddTestModal] = useState(false);
@@ -444,6 +467,9 @@ const AdminSection = () => {
                 </p>
                 <p>
                   <strong>Hospital:</strong> {booking.hospital?.name || booking.hospitalName || "N/A"}
+                </p>
+                <p>
+                  <strong>Reference:</strong> {booking.reference || booking.id}
                 </p>
                 <p>
                   <strong>Date:</strong>{" "}
@@ -1071,7 +1097,7 @@ const AdminSection = () => {
                 const patientName = appointmentObj?.user?.name || appointmentObj?.patient_name || draft.patientId || 'N/A';
                 const testName = appointmentObj?.medicalTest?.name || appointmentObj?.testName || draft.testId || 'N/A';
                 const hospitalName = appointmentObj?.hospital?.name || appointmentObj?.hospitalName || draft.hospitalId || 'N/A';
-                const apptRef = appointmentObj?.id || draft.appointmentId || 'N/A';
+                const apptRef = appointmentObj?.reference || appointmentObj?.id || draft.appointmentId || 'N/A';
                 return (
                   <>
                     <p><strong>Appointment:</strong> {apptRef}</p>
