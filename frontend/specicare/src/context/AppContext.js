@@ -323,7 +323,15 @@ export const AppProvider = ({ children }) => {
         },
         { withCredentials: true }
       );
-      setAppointments((prev) => [...prev, camelizeObject(res.data)]);
+      // Refresh the user's appointments from the server to ensure consistent state
+      try {
+        const apptsRes = await axios.get(`${API_BASE}/appointments/my`, { withCredentials: true });
+        setAppointments(camelizeObject(apptsRes.data || []));
+      } catch (err) {
+        // Fallback: append the returned appointment if fetching fresh list fails
+        console.debug('Could not refresh appointments after booking, appending locally', err && err.message);
+        setAppointments((prev) => [...prev, camelizeObject(res.data)]);
+      }
       setCurrentTest(null);
       showNotification("Booking confirmed successfully!", "success");
       setIsLoading(false);

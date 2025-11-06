@@ -47,8 +47,8 @@ async function createTables(client) {
         CREATE TABLE IF NOT EXISTS users (
             id SERIAL PRIMARY KEY,
             name VARCHAR(100) NOT NULL,
-            email VARCHAR(100) UNIQUE NOT NULL,
-            phone VARCHAR(15) UNIQUE NOT NULL,
+            email VARCHAR(100) NOT NULL,
+            phone VARCHAR(15) NOT NULL,
             password TEXT NOT NULL,
             insurance_number VARCHAR(50),
             date_of_birth DATE,

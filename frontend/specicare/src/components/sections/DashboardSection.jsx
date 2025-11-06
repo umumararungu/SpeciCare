@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useApp } from "../../context/AppContext";
+import { getField, safeDate, safeNumber } from "../../utils/safe";
 
 const DashboardSection = () => {
   const { currentUser, appointments, testResults, setActiveSection, logout } =
@@ -9,9 +10,10 @@ const DashboardSection = () => {
 
   // Server returns only the current user's results at GET /test-results/my,
   // but be defensive and filter by patient_id when available.
-  const userResults = (testResults || []).filter(
-    (result) => !result.patient_id || result.patient_id === currentUser?.id
-  );
+  const userResults = (testResults || []).filter((result) => {
+    const pid = getField(result, 'patientId', 'patient_id');
+    return !pid || pid === currentUser?.id;
+  });
 
   const renderAppointmentsTab = () => (
     <div
@@ -35,8 +37,17 @@ const DashboardSection = () => {
             const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
 
             const normalizeDate = (appt) => {
-              // Try multiple possible field names
-              const d = appt.appointment_date || appt.appintment_date || appt.date || appt.appointmentDate || appt.appintmentDate || appt.created_at || null;
+              // Try multiple possible field names (snake_case and camelCase)
+              const d = getField(
+                appt,
+                'appointmentDate',
+                'appointment_date',
+                'date',
+                'appintment_date',
+                'appintmentDate',
+                'createdAt',
+                'created_at'
+              );
               if (!d) return null;
               const parsed = new Date(d);
               if (isNaN(parsed.getTime())) return null;
@@ -61,13 +72,21 @@ const DashboardSection = () => {
             }
 
             return upcoming.map((appointment) => {
-              const apptDateRaw = appointment.appointment_date || appointment.appintment_date || appointment.date || appointment.appointmentDate || appointment.appintmentDate || appointment.created_at || null;
-              const apptDate = apptDateRaw ? new Date(apptDateRaw) : null;
-              const dateDisplay = apptDate ? apptDate.toLocaleDateString() : 'N/A';
-              const timeSlot = appointment.time_slot || appointment.timeSlot || '';
+              const apptDateRaw = getField(
+                appointment,
+                'appointmentDate',
+                'appointment_date',
+                'date',
+                'appintment_date',
+                'appintmentDate',
+                'createdAt',
+                'created_at'
+              );
+              const dateDisplay = safeDate(apptDateRaw, 'N/A');
+              const timeSlot = getField(appointment, 'time_slot', 'timeSlot') || '';
               const testName = appointment.medicalTest?.name || appointment.testName || 'Test';
               const hospitalName = appointment.hospital?.name || appointment.hospitalName || 'Hospital';
-              const price = appointment.medicalTest?.price ? appointment.medicalTest.price.toLocaleString() : '';
+              const price = safeNumber(getField(appointment.medicalTest || {}, 'price') ?? getField(appointment, 'price'));
 
               return (
                 <div key={appointment.id} className="appointment-item">
@@ -81,11 +100,11 @@ const DashboardSection = () => {
                   <p>
                     <i className="fas fa-calendar"></i> {dateDisplay} {timeSlot ? ` • ${timeSlot}` : ''}
                   </p>
-                  {price && (
+                  {price ? (
                     <p>
-                      <i className="fas fa-money-bill-wave"></i> {price} RWF
+                      <i className="fas fa-money-bill-wave"></i> {price.toLocaleString()} RWF
                     </p>
-                  )}
+                  ) : null}
                   <p className="reference">Reference: {appointment.reference || appointment.id}</p>
                 </div>
               );

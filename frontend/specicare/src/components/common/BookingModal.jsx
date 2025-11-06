@@ -71,9 +71,10 @@ const BookingModal = () => {
         setAvailableSlots([]);
         return;
       }
+      const testHospitalId = currentTest?.hospitalId ?? currentTest?.hospital_id;
       const res = await axios.get('/api/appointments/availability', {
         params: {
-          hospital_id: currentTest.hospital_id,
+          hospital_id: testHospitalId,
           date: dateIso,
           duration: currentTest.duration || 45,
         },
@@ -157,7 +158,7 @@ const BookingModal = () => {
       ...bookingData,
       test_id: currentTest.id,
       testName: currentTest.name,
-      hospital_id: currentTest.hospital_id,
+      hospital_id: currentTest?.hospital_id ?? currentTest?.hospitalId,
       price: currentTest.price,
     };
 
@@ -211,9 +212,12 @@ const BookingModal = () => {
     return null;
   }
 
-  const hospital = hospitals.find(
-    (hospital) => currentTest.hospital_id === hospital.id
-  );
+  const hospital = (hospitals || []).find((hospital) => {
+    // Support both snake_case and camelCase keys on the test
+    const testHospitalId = currentTest?.hospitalId ?? currentTest?.hospital_id;
+    // Use strict comparison on normalized string values to satisfy lint rules
+    return testHospitalId != null && hospital && String(hospital.id) === String(testHospitalId);
+  });
 
   return (
     <div id="bookingModal" className="modal" style={{ display: "block" }}>
@@ -233,7 +237,11 @@ const BookingModal = () => {
           </div>
           <div className="form-group">
             <label>Hospital</label>
-            <input type="text" value={hospital?.name || ''} readOnly />
+            <input
+              type="text"
+              value={`${hospital?.name || ''}${hospital?.district ? ' — ' + hospital?.district : ''}`}
+              readOnly
+            />
           </div>
           <div className="form-group">
             <label>Price</label>

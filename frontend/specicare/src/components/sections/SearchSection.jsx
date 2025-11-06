@@ -22,17 +22,17 @@ const SearchSection = () => {
   const filteredTests = useMemo(() => {
     return medicalTests.filter((test) => {
       const hospital = hospitals.find(
-        (hospital) => test.hospital_id === hospital.id
+        (h) => h && h.id === (test.hospitalId ?? test.hospital_id)
       );
-      const matchesSearch =
-        test.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        test.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        searchTerm === "";
 
-      console.log("hospital: ", hospital);
-      const matchesLocation =
-        hospital.district.toLowerCase().includes(locationFilter) ||
-        locationFilter === "";
+      const name = (test.name || '').toString().toLowerCase();
+      const desc = (test.description || '').toString().toLowerCase();
+      const term = (searchTerm || '').toString().toLowerCase();
+      const matchesSearch = term === '' || name.includes(term) || desc.includes(term);
+
+      const hospDistrict = (hospital && (hospital.district ?? hospital.district)) || '';
+      const loc = (locationFilter || '').toString().toLowerCase();
+      const matchesLocation = loc === '' || (hospDistrict && hospDistrict.toString().toLowerCase().includes(loc));
       const matchesCategory =
         test.category === categoryFilter || categoryFilter === "";
 
@@ -139,19 +139,18 @@ const SearchSection = () => {
         ) : (
           filteredTests.map((test) => {
             const hospital = hospitals.find(
-              (hospital) => hospital.id === test.hospital_id
+              (h) => h && h.id === (test.hospitalId ?? test.hospital_id)
             );
             return (
               <div key={test.id} className="test-card">
                 <div className="test-info">
                   <h3>{test.name}</h3>
-                  <p className="hospital">{hospital.name}</p>
+                  <p className="hospital">{hospital?.name ?? 'N/A'}</p>
                   <p className="location">
-                    <i className="fas fa-map-marker-alt"></i> {hospital.district} •{" "}
-                    {test.category}
+                    <i className="fas fa-map-marker-alt"></i> {hospital?.district ?? 'N/A'} • {test.category}
                   </p>
                   <p className="description">{test.description}</p>
-                  <p className="price">{test.price.toLocaleString()} RWF</p>
+                  <p className="price">{(Number(test.price) || 0).toLocaleString()} RWF</p>
                 </div>
                 <button
                   className="book-btn"

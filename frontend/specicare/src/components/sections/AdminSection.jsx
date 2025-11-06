@@ -588,7 +588,7 @@ const AdminSection = () => {
               <div className="hospital-info">
                 <h4>{hospital.name}</h4>
                 <p>
-                  <strong>Location:</strong> {hospital.district}
+                  <strong>Location:</strong> {hospital?.district || "N/A"}
                 </p>
                 <p>
                   <strong>Contact:</strong> {hospital.phone || "N/A"}
@@ -607,7 +607,7 @@ const AdminSection = () => {
                       email: hospital.email || "",
                       phone: hospital.phone || "",
                       province: hospital.province || "",
-                      district: hospital.district || "",
+                      district: hospital?.district || "",
                       sector: hospital.sector || "",
                       cell: hospital.cell || "",
                       village: hospital.village || "",
@@ -758,7 +758,7 @@ const AdminSection = () => {
                   {hospitals && hospitals.length > 0 ? (
                     hospitals.map((hospital) => (
                       <option key={hospital.id} value={hospital.id}>
-                        {hospital.name} — {hospital.district}
+                        {hospital.name} — {hospital?.district || ""}
                       </option>
                     ))
                   ) : (

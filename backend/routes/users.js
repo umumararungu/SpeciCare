@@ -23,29 +23,6 @@ router.post("/register", async (req, res) => {
       role = "patient",
     } = req.body;
 
-    // Check if user already exists
-    const existingUser = await User.findOne({
-      where: { email: email.toLowerCase() },
-    });
-
-    if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        message: "User with this email already exists",
-      });
-    }
-
-    // Check if phone number exists
-    const existingPhone = await User.findOne({
-      where: { phone },
-    });
-
-    if (existingPhone) {
-      return res.status(400).json({
-        success: false,
-        message: "User with this phone number already exists",
-      });
-    }
 
     // Create new user
     const user = await User.create({

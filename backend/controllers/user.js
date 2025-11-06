@@ -5,9 +5,8 @@ const { normalizePhone } = require('../utils/phone');
 
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, phone, gender, dateOfBirth, role } = req.body;
-    const existingUser = await User.findOne({ where: { email } });
-    if (existingUser) return res.status(400).json({ message: 'Email already registered' });
+  const { name, email, password, phone, gender, dateOfBirth, role } = req.body;
+  // Note: uniqueness check for email removed to allow multiple users with the same email
 
     // Normalize phone to E.164 and reject if invalid
     const normalizedPhone = normalizePhone(phone);

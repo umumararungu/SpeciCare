@@ -29,7 +29,7 @@ async function sendSMS(to, appointment = {}, extras = {}) {
   const time = appointment.time_slot || extras.time || '';
   const reference = appointment.reference || appointment.id || '';
 
-  const body = `Hello ${patientName || 'Patient'}, your appointment (${reference}) for ${testName} at ${hospitalName} is confirmed for ${date} ${time}. Thank you.`;
+  const body = `Hello ${patientName || 'Patient'}, your appointment (${reference}) for ${testName} at ${hospitalName} is confirmed for ${date} ${time}. Thank you. \n \n Muraho ${patientName || 'Patient'}, gahunda yo kufata ikizami cya ${testName} ifite nimero ya (${reference}) kubitaro bya ${hospitalName} kizafatwa kuwa ${date} saa ${time} Yasabwe neza . Murakoze.`;
 
   try {
     const createParams = {

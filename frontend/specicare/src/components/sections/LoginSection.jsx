@@ -70,10 +70,10 @@ const LoginSection = () => {
       return;
     }
 
-    if (!registerData.terms) {
-      showNotification('You must agree to the terms and conditions', 'error');
-      return;
-    }
+    // if (!registerData.terms) {
+    //   showNotification('You must agree to the terms and conditions', 'error');
+    //   return;
+    // }
 
     // Prepare data for backend 
     const userData = {

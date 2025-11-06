@@ -102,6 +102,13 @@ router.get('/availability', authenticate, async (req, res) => {
 // Create new appointment
 router.post("/", authenticate, async (req, res) => {
   const transaction = await sequelize.transaction(); // Add transaction
+  // Debug: log incoming payload and user for easier diagnosis when a rollback occurs
+  try {
+    console.debug("Create appointment start - user:", req.user?.id, "payload:", req.body);
+  } catch (err) {
+    // swallow debug errors
+    console.debug("Create appointment - failed to log payload", err && err.message);
+  }
   
   try {
     const {
@@ -254,7 +261,9 @@ router.post("/", authenticate, async (req, res) => {
     res.status(201).json(newAppointment);
   } catch (error) {
     await transaction.rollback(); // Rollback on error
-    console.error("Create appointment error:", error);
+    // Log error message and stack to help trace the root cause
+    console.error("Create appointment error:", error && error.message);
+    if (error && error.stack) console.error(error.stack);
     
     // Handle unique constraint violation for reference
     if (error.name === 'SequelizeUniqueConstraintError') {
