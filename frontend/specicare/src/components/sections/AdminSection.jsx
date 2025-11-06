@@ -27,6 +27,15 @@ const AdminSection = () => {
   const [adminActivities, setAdminActivities] = useState([]);
   const [bookingStatusFilter, setBookingStatusFilter] = useState("all");
 
+  // Helper to support both snake_case (from backend) and camelCase (normalized) keys
+  const getField = (obj, ...keys) => {
+    if (!obj) return undefined;
+    for (const k of keys) {
+      if (obj[k] !== undefined && obj[k] !== null) return obj[k];
+    }
+    return undefined;
+  };
+
   const [deptInput, setDeptInput] = useState("");
   const [facilitiesInput, setFacilitiesInput] = useState("");
 
@@ -380,7 +389,12 @@ const AdminSection = () => {
                     {user.email} • {user.phone}
                   </p>
                   <small>
-                    Joined: {new Date(user.created_at).toLocaleDateString()}
+                    Joined: {(() => {
+                      const created = getField(user, 'createdAt', 'created_at');
+                      if (!created) return 'N/A';
+                      const d = new Date(created);
+                      return isNaN(d.getTime()) ? 'N/A' : d.toLocaleDateString();
+                    })()}
                   </small>
                 </div>
                 <div className="user-actions">
@@ -433,9 +447,12 @@ const AdminSection = () => {
                 </p>
                 <p>
                   <strong>Date:</strong>{" "}
-                  {booking?.appointment_date
-                    ? new Date(booking.appointment_date).toLocaleDateString()
-                    : booking?.appointment_date || "N/A"}
+                  {(() => {
+                    const apptDate = getField(booking, 'appointmentDate', 'appointment_date');
+                    if (!apptDate) return 'N/A';
+                    const d = new Date(apptDate);
+                    return isNaN(d.getTime()) ? String(apptDate) : d.toLocaleDateString();
+                  })()}
                 </p>
                 <p>
                   <strong>Price:</strong>{" "}
@@ -497,21 +514,21 @@ const AdminSection = () => {
                 <p>
                   <strong>Hospital:</strong>{" "}
                   {
-                    ((hospitals || []).find((hospital) => hospital.id === test.hospital_id) || {}).name || 'N/A'
+                    ((hospitals || []).find((hospital) => hospital.id === (test.hospitalId ?? test.hospital_id)) || {}).name || 'N/A'
                   }
                 </p>
                 <p>
                   <strong>Category:</strong> {test.category} • {test.duration}
                 </p>
                 <p>
-                  <strong>Price:</strong> {test.price.toLocaleString()} RWF
+                  <strong>Price:</strong> {(Number(test.price ?? test.price) || 0).toLocaleString()} RWF
                 </p>
                 <span
                   className={`status ${
-                    test.is_available ? "confirmed" : "cancelled"
+                    (test.isAvailable ?? test.is_available) ? "confirmed" : "cancelled"
                   }`}
                 >
-                  {test.is_available ? "Available" : "Unavailable"}
+                  {(test.isAvailable ?? test.is_available) ? "Available" : "Unavailable"}
                 </span>
               </div>
               <div className="test-actions">

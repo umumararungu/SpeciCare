@@ -5,7 +5,7 @@ module.exports = (sequelize, DataTypes) => {
   return Notification = sequelize.define('Notification', {
     // Keep attribute name `patientId` in JS but map to DB column `patient_id`
     patientId: {
-      type: DataTypes.UUID,
+      type: DataTypes.INTEGER,
       allowNull: false,
       field: 'patient_id',
     },

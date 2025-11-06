@@ -42,6 +42,7 @@ export const AppProvider = ({ children }) => {
   const [activeSection, setActiveSection] = useState("home");
   const [isLoading, setIsLoading] = useState(false);
   const [notification, setNotification] = useState(null);
+  const [notifications, setNotifications] = useState([]);
   const [errors, setErrors] = useState([]);
   const [adminStats, setAdminStats] = useState(null);
   const [allUsers, setAllUsers] = useState([]);
@@ -137,6 +138,8 @@ export const AppProvider = ({ children }) => {
           withCredentials: true,
         });
         setTestResults(camelizeObject(resultsRes.data || []));
+        // Fetch recent notifications for user
+        await fetchNotifications();
       }
 
       setIsLoading(false);
@@ -491,6 +494,18 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  // Fetch user's recent notifications
+  const fetchNotifications = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/notifications/my`, { withCredentials: true });
+      if (res.data && res.data.success) {
+        setNotifications(camelizeObject(res.data.notifications || []));
+      }
+    } catch (err) {
+      console.error('Error fetching notifications:', err);
+    }
+  };
+
   const createHospital = async (hospitalData) => {
     try {
       const res = await axios.post(
@@ -592,6 +607,7 @@ export const AppProvider = ({ children }) => {
     activeSection,
     isLoading,
     notification,
+  notifications,
     errors,
     adminStats,
   allUsers,
@@ -632,6 +648,7 @@ export const AppProvider = ({ children }) => {
     deleteMedicalTest,
     deleteUser,
     refreshAdminData,
+    fetchNotifications,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
