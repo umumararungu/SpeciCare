@@ -37,7 +37,7 @@ const AdminSection = () => {
     return undefined;
   };
 
-  const [deptInput, setDeptInput] = useState("");
+  // const [deptInput, setDeptInput] = useState("");
   const [facilitiesInput, setFacilitiesInput] = useState("");
 
   // Initialize admin data
@@ -362,6 +362,7 @@ const AdminSection = () => {
             <p>Total Revenue</p>
           </div>
         </div>
+       {/* eslint-disable-next-line */}
       </div>
 
       <div className="recent-activities">
