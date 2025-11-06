@@ -28,6 +28,23 @@ exports.register = async (req, res) => {
     });
 
     const token = jwt.sign({ id: newUser.id, role: newUser.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
+
+    // Record recent activity: user registration
+    try {
+      const { recordActivity } = require('../services/activity');
+      await recordActivity({
+        patientId: newUser.id,
+        type: 'system_alert',
+        title: 'Account created',
+        message: `User ${newUser.name || newUser.email} registered`,
+        data: { userId: newUser.id, email: newUser.email },
+        channels: [],
+        priority: 'low',
+      });
+    } catch (e) {
+      console.error('Failed to record registration activity:', e);
+    }
+
     res.status(201).json({ user: newUser, token });
   } catch (err) {
     console.error(err);

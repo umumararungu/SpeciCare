@@ -198,6 +198,22 @@ router.post('/', authenticate, requireAdmin, upload.array('files'), async (req, 
       } catch (smsErr) {
         console.error('Error while attempting to send SMS notification for test result:', smsErr);
       }
+
+      // Record recent activity: test result recorded
+      try {
+        const { recordActivity } = require('../services/activity');
+        await recordActivity({
+          patientId: patientId,
+          type: 'result_ready',
+          title: 'Test result available',
+          message: `Test results for appointment ${appointmentId} are available`,
+          data: { testResultId: newResult.id, appointmentId, hospitalId, testId },
+          channels: ['sms'],
+          priority: 'high',
+        });
+      } catch (actErr) {
+        console.error('Failed to record test-result activity:', actErr);
+      }
     }
 
     res.status(201).json({ success: true, testResult: newResult });

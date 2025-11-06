@@ -29,6 +29,23 @@ exports.createAppointment = async (req, res) => {
       time_slot,
       status: "pending",
     });
+
+    // Record recent activity: appointment booked
+    try {
+      const { recordActivity } = require('../services/activity');
+      await recordActivity({
+        patientId: req.user.id,
+        type: 'appointment_confirmation',
+        title: 'Appointment booked',
+        message: `Appointment ${newAppointment.id} booked for ${appointmentDate} ${time_slot || ''}`,
+        data: { appointmentId: newAppointment.id, hospital_id, test_id, appointmentDate, time_slot },
+        channels: [],
+        priority: 'medium',
+      });
+    } catch (e) {
+      console.error('Failed to record appointment activity:', e);
+    }
+
     res.status(201).json(newAppointment);
   } catch (err) {
     console.error(err);
