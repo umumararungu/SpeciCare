@@ -153,7 +153,7 @@ const AdminSection = () => {
     street:"",
     latitude:"",
     longitude:"",
-    departments: [],
+    // departments: [],
     facilities: [],
     registration_number: "",
     accreditation: { body: "", status: "" },
@@ -163,7 +163,7 @@ const AdminSection = () => {
 
   useEffect(() => {
     // Guard against undefined by defaulting to an empty array
-    setDeptInput((newHospitalData.departments || []).join(", "));
+    // setDeptInput((newHospitalData.departments || []).join(", "));
     setFacilitiesInput((newHospitalData.facilities || []).join(", "));
   }, [newHospitalData]);
 
@@ -199,7 +199,7 @@ const AdminSection = () => {
       street:"",
       latitude:"",
       longitude:"",
-      departments: [],
+      // departments: [],
       facilities: [],
       registration_number: "",
       accreditation: { body: "", status: "" },
@@ -584,20 +584,26 @@ const AdminSection = () => {
           <p className="no-hospitals">No hospitals available</p>
         ) : (
           hospitals.map((hospital) => (
-            <div key={hospital.id} className="hospital-item">
-              <div className="hospital-info">
+            <div key={hospital.id} className="test-item">
+              <div className="test-info">
                 <h4>{hospital.name}</h4>
                 <p>
-                  <strong>Location:</strong> {hospital?.district || "N/A"}
+                  <strong>Location:</strong> {hospital?.district || 'N/A'}
                 </p>
                 <p>
-                  <strong>Contact:</strong> {hospital.phone || "N/A"}
+                  <strong>Contact:</strong> {hospital.phone || 'N/A'}
                 </p>
                 <p>
-                  <strong>Email:</strong> {hospital.email || "N/A"}
+                  <strong>Email:</strong> {hospital.email || 'N/A'}
                 </p>
+                {/* <p>
+                  <strong>Departments:</strong> {(hospital.departments || []).join(', ') || 'N/A'}
+                </p> */}
+                <span className={`status ${hospital.is_active ?? hospital.isActive ? 'confirmed' : 'cancelled'}`}>
+                  {hospital.is_active ?? hospital.isActive ? 'Active' : 'Inactive'}
+                </span>
               </div>
-              <div className="hospital-actions">
+              <div className="test-actions">
                 <button
                   className="secondary-btn"
                   onClick={() => {
@@ -614,7 +620,7 @@ const AdminSection = () => {
                       street: hospital.street || "",
                       latitude: hospital.latitude || "",
                       longitude: hospital.longitude || "",
-                      departments: hospital.departments || [],
+                      // departments: hospital.departments || [],
                       facilities: hospital.facilities || [],
                       registration_number: hospital.registration_number || "",
                       accreditation: hospital.accreditation || { body: "", status: "" },
@@ -937,7 +943,7 @@ const AdminSection = () => {
                 />
               </div>
 
-              {/* Departments */}
+              {/* Departments
               <div className="form-group">
                 <label>Departments (comma-separated)</label>
                 <input
@@ -955,7 +961,7 @@ const AdminSection = () => {
                     })
                   }
                 />
-              </div>
+              </div> */}
 
               {/* Facilities */}
               <div className="form-group">
