@@ -187,8 +187,7 @@ router.post('/', authenticate, requireAdmin, upload.array('files'), async (req, 
 
         const phone = patient?.phone;
         if (phone) {
-          const body = `Hello ${patient.name || 'Patient'}, your test results for ${testName} at ${hospitalName} are ready. Please kindly reach out to nearby clinic to view your results or log in to SpeciCare to view them. Reference: ${reference} .Thank you \n \n 
-                Muraho ${patient.name || 'Patient'}, turabamenyesha ko ibisubizo by'ibizamini bya ${testName} byafatiwe kubitaro bya ${hospitalName} byamaze kuboneka. Turabasaba kwegera ivuriro ribegereye bakababwira ibisubizo byanyu binyuze kurubuga rwa Specicare. Nimero y'icyo gikorwa: ${reference}. \n Murakoze.`;
+          const body = `Hello ${patient.name || 'Patient'}, your test results for ${testName} at ${hospitalName} are ready. Please kindly reach out to nearby clinic to view your results or log in to SpeciCare to view them. Reference: ${reference} .Thank you \n \n Muraho ${patient.name || 'Patient'}, turabamenyesha ko ibisubizo by'ibizamini bya ${testName} byafatiwe kubitaro bya ${hospitalName} byamaze kuboneka. Turabasaba kwegera ivuriro ribegereye bakababwira ibisubizo byanyu binyuze kurubuga rwa Specicare. Nimero y'icyo gikorwa: ${reference}. \n Murakoze.`;
           const smsRes = await sendCustomSMS(phone, body);
           if (!smsRes.success) {
             console.error('Failed sending result-ready SMS:', smsRes.error);
