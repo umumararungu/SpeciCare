@@ -799,6 +799,40 @@ main {
     box-shadow: none;
 }
 
+/* Footer */
+.app-footer {
+    background: linear-gradient(180deg, #ffffff, var(--gray-light));
+    border-top: 1px solid var(--gray-border);
+    padding: 1rem 0;
+    margin-top: 2rem;
+}
+.footer-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 0 2rem;
+}
+.footer-left strong { color: var(--black); }
+.footer-center {
+    display: flex;
+    gap: 1rem;
+}
+.footer-center a {
+    color: var(--gray-medium);
+    text-decoration: none;
+    font-size: 0.95rem;
+}
+.footer-center a:hover { color: var(--teal); }
+.footer-right small { color: var(--gray-medium); }
+
+@media (max-width: 768px) {
+    .footer-inner { flex-direction: column; text-align: center; gap: 0.5rem; }
+    .footer-center { order: 3; }
+}
+
 /* Loading Spinner */
 .loading-spinner {
     display: none;

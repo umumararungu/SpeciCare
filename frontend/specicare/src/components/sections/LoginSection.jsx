@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 
 const LoginSection = () => {
-  const { login, register, isLoading, showNotification } = useApp();
+  const { login, register, isLoading, showNotification, setActiveSection } = useApp();
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   
   // Login form state
@@ -214,6 +214,12 @@ const LoginSection = () => {
                 {isLoading ? 'Signing In...' : 'Sign In'}
               </button>
             </form>
+
+            <div className="forgot-link">
+              <button type="button" className="link-btn" onClick={() => setActiveSection('forgot')}>
+                Forgot Password?
+              </button>
+            </div>
 
             <div className="login-divider">
               <span>or</span>

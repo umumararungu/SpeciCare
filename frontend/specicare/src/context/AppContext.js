@@ -174,6 +174,33 @@ export const AppProvider = ({ children }) => {
     initializeData();
   }, [initializeData]);
 
+  // If the user navigated to a password reset URL like /reset-password?token=..., switch to reset section
+  useEffect(() => {
+    try {
+      const path = window.location.pathname || '';
+      const qs = new URLSearchParams(window.location.search || '');
+      if (path.includes('/reset-password') && qs.get('token')) {
+        setActiveSection('reset');
+      }
+    } catch (e) {
+      // ignore in SSR or non-browser contexts
+    }
+  }, []);
+
+  // Listen for simple global events (used by some components) to change active section
+  useEffect(() => {
+    const handler = (e) => {
+      try {
+        const s = e.detail;
+        if (s) setActiveSection(s);
+      } catch (err) {
+        // ignore
+      }
+    };
+    window.addEventListener('app-set-section', handler);
+    return () => window.removeEventListener('app-set-section', handler);
+  }, []);
+
   // -------------------------------
   // Authentication
   // -------------------------------
@@ -321,6 +348,42 @@ export const AppProvider = ({ children }) => {
   };
 
   // -------------------------------
+  // Password reset helpers
+  // -------------------------------
+  const forgotPassword = async (email) => {
+    try {
+      setIsLoading(true);
+      const res = await axios.post(`${API_BASE}/users/forgot-password`, { email });
+      showNotification(res.data?.message || 'If an account exists, a reset email has been sent', 'info');
+      setIsLoading(false);
+      return true;
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      showNotification('Failed to request password reset', 'error');
+      setIsLoading(false);
+      return false;
+    }
+  };
+
+  const resetPassword = async (token, newPassword) => {
+    try {
+      setIsLoading(true);
+      const res = await axios.post(`${API_BASE}/users/reset-password`, { token, password: newPassword });
+      showNotification(res.data?.message || 'Password reset successfully', 'success');
+      // After reset, navigate to login
+      setActiveSection('login');
+      setIsLoading(false);
+      return true;
+    } catch (error) {
+      console.error('Reset password error:', error);
+      showNotification(error.response?.data?.message || 'Failed to reset password', 'error');
+      setIsLoading(false);
+      return false;
+    }
+  };
+
+
+  // -------------------------------
   // Booking / Appointments
   // -------------------------------
   const bookTest = (test) => {
@@ -360,9 +423,9 @@ export const AppProvider = ({ children }) => {
         ref ? `Booking confirmed — reference: ${ref}` : "Booking confirmed successfully!",
         "success"
       );
-      // Return created appointment for callers that need it
-      return createdAppointment || null;
-      setIsLoading(false);
+  // Return created appointment for callers that need it
+  setIsLoading(false);
+  return createdAppointment || null;
     } catch (error) {
       console.error("Booking error:", error);
       showNotification(
@@ -659,6 +722,8 @@ export const AppProvider = ({ children }) => {
     login,
     logout,
     register,
+  forgotPassword,
+  resetPassword,
 
     // Booking functions
     bookTest,

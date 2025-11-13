@@ -4,6 +4,7 @@ import Header from './components/common/Header';
 import MainContent from './components/common/MainContent';
 import LoadingSpinner from './components/common/LoadingSpinner';
 import Notification from './components/common/Notification';
+import Footer from './components/common/Footer';
 import './App.css';
 
 function App() {
@@ -12,6 +13,7 @@ function App() {
       <div className="App">
         <Header />
         <MainContent />
+        <Footer />
         <LoadingSpinner />
         <Notification />
       </div>

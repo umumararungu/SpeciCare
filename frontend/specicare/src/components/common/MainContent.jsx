@@ -7,6 +7,8 @@ import SearchSection from '../sections/SearchSection';
 import DashboardSection from '../sections/DashboardSection';
 import LoginSection from '../sections/LoginSection';
 import AdminSection from '../sections/AdminSection';
+import ForgotPasswordSection from '../sections/ForgotPasswordSection';
+import ResetPasswordSection from '../sections/ResetPasswordSection';
 import BookingModal from './BookingModal';
 
 const MainContent = () => {
@@ -24,6 +26,10 @@ const MainContent = () => {
         return <DashboardSection />;
       case 'login':
         return <LoginSection />;
+      case 'forgot':
+        return <ForgotPasswordSection />;
+      case 'reset':
+        return <ResetPasswordSection />;
       case 'admin':
         return <AdminSection />;
       default:

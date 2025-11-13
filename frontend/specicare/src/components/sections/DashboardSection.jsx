@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useApp } from "../../context/AppContext";
-import { getField, safeDate, safeNumber } from "../../utils/safe";
+import { getField, safeDate, safeNumber, safeDateTime } from "../../utils/safe";
 
 const DashboardSection = () => {
   const { currentUser, appointments, testResults, setActiveSection, logout } =
@@ -135,7 +135,9 @@ const DashboardSection = () => {
           userResults.map((result) => {
             const testName = result.medicalTest?.name || result.testName || 'Test';
             const hospitalName = result.hospital?.name || result.hospitalName || 'Hospital';
-            const apptDate = result.appointment?.appointment_date || result.testDate || result.created_at || null;
+            // Prefer the nested appointment date if present, otherwise try known top-level fields
+            const apptDateRaw = result.appointment?.appointment_date ?? getField(result, 'testDate', 'test_date', 'appointment_date', 'created_at', 'createdAt');
+            const apptDateDisplay = safeDate(apptDateRaw, 'N/A');
             const files = result.files || [];
             return (
               <div key={result.id} className="result-item">
@@ -150,7 +152,7 @@ const DashboardSection = () => {
                 </p>
                 <p>
                   <i className="fas fa-calendar"></i>{" "}
-                  {apptDate ? new Date(apptDate).toLocaleDateString() : 'N/A'}
+                  {apptDateDisplay}
                 </p>
                 {files.length > 0 && (
                   <p>
@@ -221,7 +223,8 @@ const DashboardSection = () => {
     // Otherwise show a compact details dialog
     const testName = result.medicalTest?.name || result.testName || 'Test';
     const hospitalName = result.hospital?.name || result.hospitalName || 'Hospital';
-    const apptDate = result.appointment?.appointment_date || result.testDate || result.created_at || 'N/A';
+    const apptDateRaw = result.appointment?.appointment_date ?? getField(result, 'testDate', 'test_date', 'appointment_date', 'created_at', 'createdAt');
+    const apptDate = safeDateTime(apptDateRaw, 'N/A');
     const numeric = result.numeric_results ? JSON.stringify(result.numeric_results) : 'N/A';
     const text = result.text_results ? JSON.stringify(result.text_results) : result.text_findings || 'N/A';
     alert(`Result: ${testName}\nHospital: ${hospitalName}\nDate: ${apptDate}\n\nNumeric: ${numeric}\nText: ${text}`);

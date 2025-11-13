@@ -39,8 +39,7 @@ router.get("/my", authenticate, async (req, res) => {
   }
 });
 
-// Availability helper endpoint: returns available time slots for a hospital on a date
-// Query params: hospital_id, date (YYYY-MM-DD), duration (minutes, optional)
+// Get available time slots for a hospital on a given date
 router.get('/availability', authenticate, async (req, res) => {
   try {
     const { hospital_id, date, duration } = req.query;

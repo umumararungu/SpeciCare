@@ -41,7 +41,6 @@ router.get('/my', authenticate, async (req, res) => {
       include: [
         {
           model: Appointment,
-          // use default association alias (no explicit 'as' used in model associations)
           attributes: ['id', 'appointment_date', 'time_slot']
         },
         {

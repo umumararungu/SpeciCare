@@ -5,6 +5,9 @@ const jwt = require("jsonwebtoken");
 const { User } = require("../models");
 const router = express.Router();
 
+const crypto = require('crypto');
+const { sendPasswordReset } = require('../services/email');
+
 // Register new user
 router.post("/register", async (req, res) => {
   try {
@@ -179,6 +182,65 @@ router.post("/logout", (req, res) => {
     success: true,
     message: "Logout successful",
   });
+});
+
+// Request password reset
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ success: false, message: 'Email is required' });
+
+    const user = await User.findOne({ where: { email: email.toLowerCase() } });
+    if (!user) {
+      // Don't reveal whether the email exists
+      return res.json({ success: true, message: 'If an account with that email exists, a reset link has been sent.' });
+    }
+
+    // Create a short-lived JWT token (1h) containing user id
+    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    // Construct reset link - frontend will handle the token and post new password
+    const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
+
+    // Send email with link
+    try {
+      await sendPasswordReset(user.email, resetLink, { name: user.name });
+    } catch (e) {
+      console.error('Failed to send password reset email:', e);
+    }
+
+    return res.json({ success: true, message: 'If an account with that email exists, a reset link has been sent.' });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// Reset password using token
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { token, password } = req.body;
+    if (!token || !password) return res.status(400).json({ success: false, message: 'Token and new password are required' });
+
+    // Verify token
+    let payload;
+    try {
+      payload = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (e) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired token' });
+    }
+
+    const user = await User.findByPk(payload.userId);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    // Update password (User model hook will hash it)
+    await user.update({ password });
+
+    return res.json({ success: true, message: 'Password has been reset. You can now login with your new password.' });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
 });
 
 // Get current user - FIXED VERSION

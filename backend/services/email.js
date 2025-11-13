@@ -48,3 +48,37 @@ async function sendAppointmentConfirmation(to, appointment = {}, extras = {}) {
 module.exports = {
   sendAppointmentConfirmation,
 };
+
+// Send password reset email with a secure short-lived token link
+async function sendPasswordReset(to, resetLink, extras = {}) {
+  const subject = `Reset your SpeciCare password`;
+
+  const html = `
+    <p>Hi ${extras.name || 'user'},</p>
+    <p>We received a request to reset the password for your SpeciCare account.</p>
+    <p>Please click the link below to choose a new password. This link will expire in 1 hour.</p>
+    <p><a href="${resetLink}">Reset your password</a></p>
+    <p>If you didn't request a password reset, you can safely ignore this email.</p>
+    <p>Regards,<br/>SpeciCare Team</p>
+  `;
+
+  const mailOptions = {
+    from: process.env.FROM_EMAIL || process.env.SMTP_USER,
+    to,
+    subject,
+    html,
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    return { success: true, info };
+  } catch (error) {
+    console.error('Error sending password reset email:', error);
+    return { success: false, error };
+  }
+}
+
+module.exports = {
+  sendAppointmentConfirmation,
+  sendPasswordReset,
+};
